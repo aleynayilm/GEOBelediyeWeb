@@ -33,12 +33,14 @@ export default function Table({ onDataChanged }) {
 
         await updateLocation(editingId, updatedData);
         setEditingId(null);
-        fetchData();
+        await fetchData();
+        if (onDataChanged) onDataChanged(); // Harita güncelle
     };
 
     const handleDelete = async (id) => {
         await deleteLocation(id);
-        fetchData();
+        await fetchData();
+        if (onDataChanged) onDataChanged(); // Harita güncelle
     };
 
     const handleAdd = async () => {
@@ -50,9 +52,8 @@ export default function Table({ onDataChanged }) {
         await addData(newItem);
         setNewItem({ name: '', wkt: '' });
         setShowAddForm(false);
-        fetchData();
-
-        if (onDataChanged) onDataChanged(); // Haritayı yenile
+        await fetchData();
+        if (onDataChanged) onDataChanged(); // Harita güncelle
     };
 
     return (
