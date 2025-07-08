@@ -3,7 +3,7 @@ import {getData, deleteData, updateLocation, addData, deleteLocation} from '../.
 import { FiEdit2, FiTrash2, FiSave, FiPlusCircle } from 'react-icons/fi';
 import '../../Css/Table.css';
 
-export default function Table() {
+export default function Table({ onDataChanged }) {
     const [data, setData] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', wkt: '' });
@@ -51,6 +51,8 @@ export default function Table() {
         setNewItem({ name: '', wkt: '' });
         setShowAddForm(false);
         fetchData();
+
+        if (onDataChanged) onDataChanged(); // Haritayı yenile
     };
 
     return (
