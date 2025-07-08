@@ -1,0 +1,162 @@
+/* Genel Stiller */
+.premium-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Premium Gösterim Kutusu */
+.premium-display-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+.add-form {
+    margin: 1rem 0;
+    display: flex;
+    gap: 1rem;
+}
+.premium-icon {
+    margin-bottom: 1rem;
+    color: #ffd700;
+}
+
+.premium-display-box h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.premium-display-box p {
+    opacity: 0.9;
+}
+
+/* Tablo Başlık */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.table-header h2 {
+    color: #2d3748;
+    font-size: 1.8rem;
+}
+
+/* Butonlar */
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.add-btn {
+    background-color: #48bb78;
+    color: white;
+}
+
+.add-btn:hover {
+    background-color: #38a169;
+    transform: translateY(-2px);
+}
+
+.edit-btn {
+    background-color: #4299e1;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #3182ce;
+}
+
+.delete-btn {
+    background-color: #f56565;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #e53e3e;
+}
+
+.save-btn {
+    background-color: #9f7aea;
+    color: white;
+}
+
+.save-btn:hover {
+    background-color: #805ad5;
+}
+
+/* Tablo Stilleri */
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.premium-table th {
+    background-color: #4a5568;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.premium-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.premium-table tr:last-child td {
+    border-bottom: none;
+}
+
+.premium-table tr:hover {
+    background-color: #f7fafc;
+}
+
+.editing-active {
+    background-color: #ebf8ff !important;
+}
+
+/* Input Stilleri */
+.premium-input {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.premium-input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+/* Action Hücreleri */
+.action-cells {
+    display: flex;
+    gap: 0.5rem;
+}
