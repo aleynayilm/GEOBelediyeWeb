@@ -14,7 +14,7 @@ import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
 import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
-import { getData as getLocations, addData } from '../../Api/api';
+import {getData as getLocations, addData, updateLocation} from '../../Api/api';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import {geocodeAddress} from "../Geocode";
@@ -30,7 +30,7 @@ export default function SimpleMap() {
     const overlayRef = useRef();
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
-
+    const addressInputRef = useRef();
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
         const baseStyle = (() => {
@@ -209,6 +209,25 @@ export default function SimpleMap() {
 
         const modify = new Modify({ source: vectorSource.current });
         mapInstance.current.addInteraction(modify);
+        modify.on('modifyend', async (e) => {
+            const features = e.features.getArray();
+
+            for (let feature of features) {
+                const id = feature.getId();
+                if (!id) continue; // id yoksa kaydetme
+
+                const wkt = new WKT().writeFeature(feature);
+                try {
+                    await updateLocation({ id, wkt });
+                    console.log(`ID ${id} başarıyla güncellendi.`);
+                } catch (err) {
+                    console.error(`ID ${id} güncellenemedi:`, err);
+                }
+            }
+
+            await loadFeaturesFromAPI(); // güncel halini tekrar yükle
+        });
+
 
         const select = new Select();
         mapInstance.current.addInteraction(select);
@@ -308,12 +327,33 @@ export default function SimpleMap() {
     return (
         <div style={{ width: '100%', height: '100vh' }}>
             <div className="draw-controls">
-                <input
-                    type="text"
-                    placeholder="Adres girin (örneğin Başarsoft Ankara)"
-                    onKeyDown={async (e) => {
-                        if (e.key === 'Enter') {
-                            const address = e.target.value;
+
+
+
+
+
+                <div className="draw-controls">
+                    {/* Diğer select ve butonlar burada olabilir */}
+
+                    <input
+                        type="text"
+                        ref={addressInputRef}
+                        placeholder="Adres girin (örn. Başarsoft Ankara)"
+                        className="custom-address-input"
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            margin: '0 5px',
+                            borderRadius: '6px',
+                            border: '1px solid #ccc',
+                            width: '250px'
+                        }}
+                    />
+                    <button
+                        onClick={async () => {
+                            const address = addressInputRef.current.value;
+                            if (!address) return;
+
                             const result = await geocodeAddress(address);
                             if (!result) {
                                 alert('Adres bulunamadı');
@@ -327,8 +367,8 @@ export default function SimpleMap() {
                             });
 
                             try {
-                                await addData({ name: address, wkt });
-                                vectorSource.current.addFeature(feature); // elle ekle
+                                await addData({name: address, wkt});
+                                vectorSource.current.addFeature(feature);
 
                                 const featureGeom = feature.getGeometry();
                                 const extent = featureGeom.getExtent();
@@ -338,23 +378,18 @@ export default function SimpleMap() {
                                     duration: 1000
                                 });
 
-                                e.target.value = '';
+                                addressInputRef.current.value = '';
                             } catch (err) {
                                 console.error('Adres kaydedilemedi:', err);
                                 alert('Kaydedilirken hata oluştu');
                             }
-                        }
-                    }}
-                    className="custom-address-input"
-                    style={{
-                        padding: '6px 12px',
-                        fontSize: '14px',
-                        margin: '0 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #ccc',
-                        width: '300px'
-                    }}
-                />
+                        }}
+                        className="custom-button"
+                        style={{padding: '6px 12px', fontSize: '14px', marginRight: '10px'}}
+                    >
+                        📍 Ekle
+                    </button>
+                </div>
 
 
                 <select ref={typeSelectRef} defaultValue="Point" className="custom-select">
