@@ -148,13 +148,63 @@
     width: 100%;
     transition: all 0.3s;
 }
+.draw-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.custom-select {
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f9f9f9;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-select:hover {
+    background: #e0e0e0;
+}
+
+.custom-button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #ff4d4d;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-button:hover {
+    background: #e03e3e;
+}
 
 .premium-input:focus {
     outline: none;
     border-color: #4299e1;
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
 }
-
+.ol-popup {
+    background: white;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    min-width: 200px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.2);
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
 /* Action Hücreleri */
 .action-cells {
     display: flex;

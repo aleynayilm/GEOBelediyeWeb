@@ -1,3 +1,4 @@
+// SimpleMap.jsx - Ikon seçimi, etiketleme, popup ve modify ile tam güncellenmiş hali
 import React, { useEffect, useRef } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
@@ -7,78 +8,89 @@ import OSM from 'ol/source/OSM';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Draw from 'ol/interaction/Draw';
-import { fromLonLat } from 'ol/proj';
+import Modify from 'ol/interaction/Modify';
+import Select from 'ol/interaction/Select';
+import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
+import { fromLonLat } from 'ol/proj';
+import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { getData as getLocations, addData } from '../../Api/api';
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
 
 export default function SimpleMap() {
     const mapRef = useRef();
     const typeSelectRef = useRef();
+    const iconSelectRef = useRef();
     const undoButtonRef = useRef();
     const vectorSource = useRef(new VectorSource());
     const mapInstance = useRef(null);
     const drawRef = useRef(null);
+    const overlayRef = useRef();
+    const popupContainerRef = useRef();
+    const popupContentRef = useRef();
 
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
-        if (type === 'Point') {
-            return new Style({
-                image: new CircleStyle({
-                    radius: 6,
-                    fill: new Fill({ color: 'yellow' }),
-                    stroke: new Stroke({ color: 'black', width: 2 })
-                })
-            });
-        } else if (type === 'LineString') {
-            return new Style({
-                stroke: new Stroke({ color: ' Red', width: 3 })
-            });
-        } else if (type === 'Polygon') {
-            return new Style({
-                stroke: new Stroke({ color: 'red', width: 2 }),
-                fill: new Fill({ color: 'rgba(255, 0, 0, 0.1)' })
-            });
+        const baseStyle = (() => {
+            if (type === 'Point') {
+                return new Style({
+                    image: new CircleStyle({
+                        radius: 6,
+                        fill: new Fill({ color: 'yellow' }),
+                        stroke: new Stroke({ color: 'black', width: 2 })
+                    })
+                });
+            } else if (type === 'LineString') {
+                return new Style({
+                    stroke: new Stroke({ color: 'Red', width: 3 })
+                });
+            } else if (type === 'Polygon') {
+                return new Style({
+                    stroke: new Stroke({ color: 'red', width: 2 }),
+                    fill: new Fill({ color: 'rgba(255, 0, 0, 0.1)' })
+                });
+            }
+        })();
+
+        const id = feature.getId();
+        if (id !== undefined) {
+            baseStyle.setText(new Text({
+                text: String(id),
+                font: 'bold 12px Arial',
+                fill: new Fill({ color: '#000' }),
+                stroke: new Stroke({ color: '#fff', width: 2 }),
+                offsetY: -15
+            }));
         }
+
+        return baseStyle;
     };
 
-    // WKT'nin hangi koordinat sisteminde olduğunu tahmin eden fonksiyon
     const isLikelyEPSG3857 = (wktString) => {
-        // WKT içindeki ilk sayı çok büyükse (örneğin 180°'den büyük), bu EPSG:3857 olabilir
         const match = wktString.match(/[-]?\d+(\.\d+)?/);
         return match && parseFloat(match[0]) > 180;
     };
 
-    // DB'den çizimleri çeker
     const loadFeaturesFromAPI = async () => {
         try {
-            vectorSource.current.clear(); // eski verileri temizle
+            vectorSource.current.clear();
             const format = new WKT();
             const res = await getLocations();
             const response = res.data || res;
 
-            if (!Array.isArray(response)) {
-                console.error('API formatı hatalı:', response);
-                return;
-            }
+            if (!Array.isArray(response)) return;
 
             response.forEach(item => {
                 if (!item.wkt) return;
                 try {
-                    // Koordinat sistemine göre uygun projection seçimi
                     const projection = isLikelyEPSG3857(item.wkt) ? 'EPSG:3857' : 'EPSG:4326';
-
-                    // WKT'yi Feature objesine çeviriyoruz
                     const feature = format.readFeature(item.wkt, {
                         dataProjection: projection,
-                        featureProjection: 'EPSG:3857' // Harita zaten EPSG:3857'de
+                        featureProjection: 'EPSG:3857'
                     });
-
-                    // ID ve isim gibi özellikleri set edelim
                     feature.setId(item.id);
                     feature.setProperties({ name: item.name });
-
-                    // Haritaya ekle
                     vectorSource.current.addFeature(feature);
                 } catch (err) {
                     console.warn('WKT Parse Hatası:', item.wkt, err);
@@ -99,134 +111,223 @@ export default function SimpleMap() {
         }
     };
 
-    // Haritayı başlat
     useEffect(() => {
-        //Map nesnesini oluşturur
         mapInstance.current = new Map({
-            //Haritayı çiziceğimiz divi belirtiyor
             target: mapRef.current,
-            //Katmanları belirtiyoruz.
             layers: [
-                //Openstreet map katmanı
                 new TileLayer({ source: new OSM() }),
-                //Üstüne çizeceğimiz şekiller katmanı
                 new VectorLayer({ source: vectorSource.current, style: styleFunction })
             ],
-            //Haritanın başlangıç görünümünü ayarlıyoruz
-            view: new View({
-                //Türkiyeden başlatıyorum
-                center: fromLonLat([34, 39]),
-                //zoom seviyesi
-                zoom: 6
-            })
+            view: new View({ center: fromLonLat([34, 39]), zoom: 6 })
         });
 
-        // Çizim interaction'ını ekleyen fonksiyon
-        const addInteraction = () => {
-            //<select> elementinde seçili olan değeri alır.
-            const type = typeSelectRef.current.value;
-            //Seçilen tipi yazdırıyoruz
-            console.log('Seçilen tip:', type);
-            //Checking
-            if (type === 'None') return;
-            //Çizim özelliğini tanımlıyoruz
-            const draw = new Draw({
-                //Çizilen şeyi tutuyor
-                source: vectorSource.current,
-                //Çizim tipini tutuyoruz
-                type: type,
-            });
-            //Çizim bitince çalışıyor
-            draw.on('drawend', async (event) => {
-                //Feature çizdiğimiz şekil
-                const feature = event.feature;
-                //wkt formatına çeviriyor hazır kütüphane ol kütüphanesi
-                const wktFormat = new WKT();
-                const wkt = wktFormat.writeFeature(feature);
-                //Consola bastırıyoruz test için
-                console.log('Çizilen objenin WKT:', wkt);
+        overlayRef.current = new Overlay({
+            element: popupContainerRef.current,
+            autoPan: true,
+            positioning: 'bottom-center',
+            stopEvent: false,
+            offset: [0, -10]
+        });
+        mapInstance.current.addOverlay(overlayRef.current);
 
-                // Kullanıcıdan isim al
+        const addInteraction = () => {
+            const type = typeSelectRef.current.value;
+            if (type === 'None') return;
+            const draw = new Draw({ source: vectorSource.current, type });
+
+            draw.on('drawend', async (event) => {
+                const feature = event.feature;
+                const wkt = new WKT().writeFeature(feature);
+
                 const name = prompt("Bu objeye bir isim verin:");
                 if (!name) {
-                    alert("İsim verilmediği için obje siliniyor.");
-
-                    // ✨ Çözüm: önce çizimi iptal et, sonra feature'ı sil
-                    draw.abortDrawing(); // çizim sürecini iptal et
-                    setTimeout(() => {
-                        vectorSource.current.removeFeature(feature); // haritadan temizle
-                    }, 0);
-
+                    draw.abortDrawing();
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
                     return;
                 }
 
-                // DB'ye gönder
                 try {
                     await addData({ name, wkt });
-                    alert("Veri kaydedildi.");
-                    await loadFeaturesFromAPI(); // Yeniden yükle
-                } catch (err) {
-                    console.error("Kayıt hatası:", err);
-                    alert("Veri kaydedilemedi.");
+                    await loadFeaturesFromAPI();
 
-                    // ✨ Kayıt başarısızsa da aynı şekilde temizle
+                    const selectedIcon = iconSelectRef.current.value;
+                    if (selectedIcon !== "none") {
+                        const iconText = {
+                            flag: "🚩",
+                            star: "⭐",
+                            plane: "✈️",
+                            pin: "📍"
+                        }[selectedIcon];
+
+                        const iconStyle = new Style({
+                            text: new Text({
+                                text: iconText,
+                                font: '20px sans-serif',
+                                offsetY: -20,
+                                fill: new Fill({ color: '#000' }),
+                                stroke: new Stroke({ color: '#fff', width: 2 })
+                            })
+                        });
+
+                        const geometry = feature.getGeometry();
+                        let iconFeature;
+                        if (geometry.getType() === 'Point') {
+                            iconFeature = new Feature(new Point(geometry.getCoordinates()));
+                        } else if (geometry.getType() === 'LineString') {
+                            const coords = geometry.getCoordinates();
+                            iconFeature = new Feature(new Point(coords[coords.length - 1]));
+                        } else if (geometry.getType() === 'Polygon') {
+                            iconFeature = new Feature(new Point(geometry.getInteriorPoint().getCoordinates()));
+                        }
+                        if (iconFeature) {
+                            iconFeature.setStyle(iconStyle);
+                            vectorSource.current.addFeature(iconFeature);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Kı kayıt hatası:", err);
                     draw.abortDrawing();
-                    setTimeout(() => {
-                        vectorSource.current.removeFeature(feature);
-                    }, 0);
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
                 }
             });
-            //Oluşturduğumuz şekili haritaya ekliyoruz
+
             mapInstance.current.addInteraction(draw);
-            //Ref ile kayıt ediyoruz daha sonra silebilmek için
             drawRef.current = draw;
         };
 
-        // İlk interaction'ı ekle
         addInteraction();
 
-        // Çizim türü değiştiğinde interaction'ı güncelle
-        //Çizim türünü değiştirdiğinde bu fonksiyon çalışıyor
         typeSelectRef.current.onchange = () => {
-            //Varsa önceki interactionı kaldırıyoruz ki çakışma olmasın
-            if (drawRef.current) {
-                mapInstance.current.removeInteraction(drawRef.current);
-            }
-            //Yeni interactionu ekliyoruz daha doğrusu başlatıyoruz
+            if (drawRef.current) mapInstance.current.removeInteraction(drawRef.current);
             addInteraction();
         };
 
-        // Undo butonu
-        //Undo butonuna basıldığında bu fonksiyon çalışacak
         undoButtonRef.current.addEventListener('click', () => {
-            //Seçili işlemi geri alıyor kaldırıyor
-            if (drawRef.current) {
-                drawRef.current.removeLastPoint();
+            if (drawRef.current) drawRef.current.removeLastPoint();
+        });
+
+        const modify = new Modify({ source: vectorSource.current });
+        mapInstance.current.addInteraction(modify);
+
+        const select = new Select();
+        mapInstance.current.addInteraction(select);
+        select.on('select', (e) => {
+            const feature = e.selected[0];
+            if (feature) {
+                const coordinates = feature.getGeometry().getFirstCoordinate();
+                const id = feature.getId();
+                const name = feature.get('name');
+                const wkt = new WKT().writeFeature(feature);
+                popupContentRef.current.innerHTML = `
+                    <strong>ID:</strong> ${id}<br/>
+                    <strong>Name:</strong> ${name}<br/>
+                    <strong>WKT:</strong><br/><small>${wkt}</small>
+                `;
+                overlayRef.current.setPosition(coordinates);
+            } else {
+                overlayRef.current.setPosition(undefined);
             }
         });
 
-        // Sayfa yüklendiğinde verileri getir
         loadFeaturesFromAPI();
-
-        return () => {
-            //Haritayı düzgün bir şekilde kapatmak için yöntem.
-            // Başka sayfaya geçildiğindde DOM bağlantısını kesiyoruz temizliyoruz
-            mapInstance.current.setTarget(undefined);
-        };
+        return () => mapInstance.current.setTarget(undefined);
     }, []);
+    useEffect(() => {
+        let toggle = true;
 
+        const animate = () => {
+            vectorSource.current.getFeatures().forEach((feature) => {
+                if (feature.getGeometry().getType() === 'Point') {
+                    const fillColor = toggle ? 'red' : 'white';
+                    const strokeColor = toggle ? 'white' : 'red';
+
+                    const style = new Style({
+                        image: new CircleStyle({
+                            radius: 8,
+                            fill: new Fill({ color: fillColor }),
+                            stroke: new Stroke({ color: strokeColor, width: 3 }),
+                        }),
+                        text: new Text({
+                            text: String(feature.getId() || ''),
+                            font: 'bold 12px Arial',
+                            fill: new Fill({ color: '#000' }),
+                            stroke: new Stroke({ color: '#fff', width: 2 }),
+                            offsetY: -15,
+                        }),
+                    });
+
+                    feature.setStyle(style);
+                }
+            });
+
+            toggle = !toggle;
+            mapInstance.current && mapInstance.current.render();
+            setTimeout(animate, 800); // her 0.5 saniyede bir renk değişimi
+        };
+
+        animate();
+    }, []);
+   /* useEffect(() => {
+        let radius = 6;
+        let growing = true;
+
+        const animate = () => {
+            vectorSource.current.getFeatures().forEach((feature) => {
+                if (feature.getGeometry().getType() === 'Point') {
+                    const style = new Style({
+                        image: new CircleStyle({
+                            radius: radius,
+                            fill: new Fill({ color: 'yellow' }),
+                            stroke: new Stroke({ color: 'black', width: 2 }),
+                        }),
+                        text: new Text({
+                            text: String(feature.getId() || ''),
+                            font: 'bold 12px Arial',
+                            fill: new Fill({ color: '#000' }),
+                            stroke: new Stroke({ color: '#fff', width: 2 }),
+                            offsetY: -15,
+                        }),
+                    });
+                    feature.setStyle(style);
+                }
+            });
+
+            radius += growing ? 0.2 : -0.2;
+            if (radius > 8) growing = false;
+            if (radius < 6) growing = true;
+
+            mapInstance.current && mapInstance.current.render();
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }, []);
+    *\
+    */
     return (
         <div style={{ width: '100%', height: '100vh' }}>
-            <div>
-                <select ref={typeSelectRef} defaultValue="Point">
-                    <option value="None">None</option>
-                    <option value="Point">Point</option>
-                    <option value="LineString">LineString</option>
-                    <option value="Polygon">Polygon</option>
+            <div className="draw-controls">
+                <select ref={typeSelectRef} defaultValue="Point" className="custom-select">
+                    <option value="None">Seçim Yap</option>
+                    <option value="Point">Nokta</option>
+                    <option value="LineString">Çizgi</option>
+                    <option value="Polygon">Alan</option>
                 </select>
-                <button ref={undoButtonRef}>Undo</button>
+                <select ref={iconSelectRef} defaultValue="none" className="custom-select">
+                    <option value="none">📊 İkon Seç</option>
+                    <option value="flag">🚩 Bayrak</option>
+                    <option value="star">⭐ Yıldız</option>
+                    <option value="plane">✈️ Uçak</option>
+                    <option value="pin">📍 Pin</option>
+                </select>
+                <button ref={undoButtonRef} className="custom-button">
+                    ⟲ Geri Al
+                </button>
             </div>
             <div ref={mapRef} style={{ width: '100%', height: '90vh' }}></div>
+            <div ref={popupContainerRef} className="ol-popup">
+                <div ref={popupContentRef}></div>
+            </div>
         </div>
     );
 }
