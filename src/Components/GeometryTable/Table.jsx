@@ -66,7 +66,6 @@ export default function Table({ onDataChanged }) {
                 </button>
             </div>
 
-            {/* Yeni Ekleme Formu */}
             {showAddForm && (
                 <div className="add-form">
                     <input
