@@ -17,6 +17,7 @@ import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { getData as getLocations, addData } from '../../Api/api';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
+import {geocodeAddress} from "../Geocode";
 
 export default function SimpleMap() {
     const mapRef = useRef();
@@ -307,6 +308,55 @@ export default function SimpleMap() {
     return (
         <div style={{ width: '100%', height: '100vh' }}>
             <div className="draw-controls">
+                <input
+                    type="text"
+                    placeholder="Adres girin (örneğin Başarsoft Ankara)"
+                    onKeyDown={async (e) => {
+                        if (e.key === 'Enter') {
+                            const address = e.target.value;
+                            const result = await geocodeAddress(address);
+                            if (!result) {
+                                alert('Adres bulunamadı');
+                                return;
+                            }
+
+                            const wkt = `POINT(${result.lon} ${result.lat})`;
+                            const feature = new WKT().readFeature(wkt, {
+                                dataProjection: 'EPSG:4326',
+                                featureProjection: 'EPSG:3857'
+                            });
+
+                            try {
+                                await addData({ name: address, wkt });
+                                vectorSource.current.addFeature(feature); // elle ekle
+
+                                const featureGeom = feature.getGeometry();
+                                const extent = featureGeom.getExtent();
+                                mapInstance.current.getView().fit(extent, {
+                                    padding: [50, 50, 50, 50],
+                                    maxZoom: 17,
+                                    duration: 1000
+                                });
+
+                                e.target.value = '';
+                            } catch (err) {
+                                console.error('Adres kaydedilemedi:', err);
+                                alert('Kaydedilirken hata oluştu');
+                            }
+                        }
+                    }}
+                    className="custom-address-input"
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        margin: '0 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #ccc',
+                        width: '300px'
+                    }}
+                />
+
+
                 <select ref={typeSelectRef} defaultValue="Point" className="custom-select">
                     <option value="None">Seçim Yap</option>
                     <option value="Point">Nokta</option>
@@ -324,7 +374,7 @@ export default function SimpleMap() {
                     ⟲ Geri Al
                 </button>
             </div>
-            <div ref={mapRef} style={{ width: '100%', height: '90vh' }}></div>
+            <div ref={mapRef} style={{width: '100%', height: '90vh'}}></div>
             <div ref={popupContainerRef} className="ol-popup">
                 <div ref={popupContentRef}></div>
             </div>
