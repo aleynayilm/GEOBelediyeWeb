@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef,forwardRef,
+    useImperativeHandle } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -18,7 +20,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import {geocodeAddress} from "../Geocode";
 
-export default function SimpleMap({ dataUpdated, onDataUpdated }) {
+const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const mapRef = useRef();
     const typeSelectRef = useRef();
     const iconSelectRef = useRef();
@@ -30,7 +32,10 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
     const addressInputRef = useRef();
-
+    //Başka bir bileşenin fonksiyonunu ref olarak alabiliyoruz.
+    useImperativeHandle(ref, () => ({
+        focusOnFeature
+    }));
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
         const baseStyle = (() => {
@@ -265,7 +270,7 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
 
                 let extraInfo = '';
 
-                // EPSG:3857 ölçü birimi metre
+
                 if (geometry.getType() === 'LineString') {
                     const length = geometry.getLength(); // metre
                     extraInfo = `<br/><strong>Uzunluk:</strong> ${length.toFixed(2)} m`;
@@ -331,7 +336,41 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
 
         animate();
     }, []);
+    const focusOnFeature = (id) => {
+        const feature = vectorSource.current.getFeatureById(id);
+        if (!feature) return;
 
+        const geometry = feature.getGeometry();
+        const extent = geometry.getExtent();
+
+        mapInstance.current.getView().fit(extent, {
+            padding: [50, 50, 50, 50],
+            maxZoom: 17,
+            duration: 1000
+        });
+
+        // Popup da göster
+        const wkt = new WKT().writeFeature(feature);
+        const name = feature.get('name');
+        const coordinates = geometry.getFirstCoordinate();
+
+        let extraInfo = '';
+        if (geometry.getType() === 'LineString') {
+            const length = geometry.getLength();
+            extraInfo = `<br/><strong>Uzunluk:</strong> ${length.toFixed(2)} m`;
+        } else if (geometry.getType() === 'Polygon') {
+            const area = geometry.getArea();
+            extraInfo = `<br/><strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
+        }
+
+        popupContentRef.current.innerHTML = `
+        <strong>ID:</strong> ${id}<br/>
+        <strong>Name:</strong> ${name}<br/>
+        <strong>WKT:</strong><br/><small>${wkt}</small>
+        ${extraInfo}
+    `;
+        overlayRef.current.setPosition(coordinates);
+    };
     return (
         <div style={{ width: '100%', height: '100vh' }}>
             <div className="draw-controls">
@@ -419,4 +458,8 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
             </div>
         </div>
     );
-}
+
+
+});
+
+export default SimpleMap;

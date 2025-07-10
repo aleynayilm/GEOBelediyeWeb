@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {getData, deleteData, updateLocation, addData, deleteLocation} from '../../Api/api';
 import { FiEdit2, FiTrash2, FiSave, FiPlusCircle } from 'react-icons/fi';
 import '../../Css/Table.css';
+import SimpleMap from '../Map/Map';
 
-export default function Table({ onDataUpdate, dataUpdated }) {
+export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
     const [data, setData] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', wkt: '' });
@@ -120,14 +121,19 @@ export default function Table({ onDataUpdate, dataUpdated }) {
                     </thead>
                     <tbody>
                     {data.map((item) => (
-                        <tr key={item.id} className={editingId === item.id ? 'editing-active' : ''}>
+                        <tr
+                            key={item.id}
+                            onClick={() => mapRef.current?.focusOnFeature(item.id)}
+                            className={editingId === item.id ? 'editing-active' : ''}
+                            style={{cursor: 'pointer'}}
+                        >
                             <td>{item.id}</td>
                             <td>
                                 {editingId === item.id ? (
                                     <input
                                         className="premium-input"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        onChange={(e) => setFormData({...formData, name: e.target.value})}
                                     />
                                 ) : (
                                     item.name
@@ -138,7 +144,7 @@ export default function Table({ onDataUpdate, dataUpdated }) {
                                     <input
                                         className="premium-input"
                                         value={formData.wkt}
-                                        onChange={(e) => setFormData({ ...formData, wkt: e.target.value })}
+                                        onChange={(e) => setFormData({...formData, wkt: e.target.value})}
                                     />
                                 ) : (
                                     item.wkt
@@ -147,15 +153,15 @@ export default function Table({ onDataUpdate, dataUpdated }) {
                             <td className="action-cells">
                                 {editingId === item.id ? (
                                     <button className="btn save-btn" onClick={handleSave}>
-                                        <FiSave /> Kaydet
+                                        <FiSave/> Kaydet
                                     </button>
                                 ) : (
                                     <>
                                         <button className="btn edit-btn" onClick={() => handleEdit(item)}>
-                                            <FiEdit2 /> Düzenle
+                                            <FiEdit2/> Düzenle
                                         </button>
                                         <button className="btn delete-btn" onClick={() => handleDelete(item.id)}>
-                                            <FiTrash2 /> Sil
+                                            <FiTrash2/> Sil
                                         </button>
                                     </>
                                 )}
@@ -163,6 +169,7 @@ export default function Table({ onDataUpdate, dataUpdated }) {
                         </tr>
                     ))}
                     </tbody>
+
                 </table>
             </div>
         </div>
