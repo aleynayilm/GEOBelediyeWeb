@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -13,13 +13,12 @@ import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
 import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
-import { getData as getLocations, addData, updateLocation } from '../../Api/api';
+import {getData as getLocations, addData, updateLocation} from '../../Api/api';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
-import { geocodeAddress } from "../Geocode";
-import { getCenter } from 'ol/extent';
+import {geocodeAddress} from "../Geocode";
 
-export default function SimpleMap({ onDataUpdated }) {
+export default function SimpleMap({ dataUpdated, onDataUpdated }) {
     const mapRef = useRef();
     const typeSelectRef = useRef();
     const iconSelectRef = useRef();
@@ -31,34 +30,39 @@ export default function SimpleMap({ onDataUpdated }) {
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
     const addressInputRef = useRef();
-    const [selectedFeature, setSelectedFeature] = useState(null);
-
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
-        const baseStyle = new Style({
-            image: type === 'Point' ? new CircleStyle({
-                radius: 6,
-                fill: new Fill({ color: 'yellow' }),
-                stroke: new Stroke({ color: 'black', width: 2 })
-            }) : undefined,
-            stroke: type === 'LineString' ? new Stroke({
-                color: 'red',
-                width: 3
-            }) : type === 'Polygon' ? new Stroke({
-                color: 'red',
-                width: 2
-            }) : undefined,
-            fill: type === 'Polygon' ? new Fill({
-                color: 'rgba(255, 0, 0, 0.1)'
-            }) : undefined,
-            text: new Text({
-                text: String(feature.getId() || ''),
+        const baseStyle = (() => {
+            if (type === 'Point') {
+                return new Style({
+                    image: new CircleStyle({
+                        radius: 6,
+                        fill: new Fill({ color: 'yellow' }),
+                        stroke: new Stroke({ color: 'black', width: 2 })
+                    })
+                });
+            } else if (type === 'LineString') {
+                return new Style({
+                    stroke: new Stroke({ color: 'Red', width: 3 })
+                });
+            } else if (type === 'Polygon') {
+                return new Style({
+                    stroke: new Stroke({ color: 'red', width: 2 }),
+                    fill: new Fill({ color: 'rgba(255, 0, 0, 0.1)' })
+                });
+            }
+        })();
+
+        const id = feature.getId();
+        if (id !== undefined) {
+            baseStyle.setText(new Text({
+                text: String(id),
                 font: 'bold 12px Arial',
                 fill: new Fill({ color: '#000' }),
                 stroke: new Stroke({ color: '#fff', width: 2 }),
                 offsetY: -15
-            })
-        });
+            }));
+        }
 
         return baseStyle;
     };
@@ -70,14 +74,15 @@ export default function SimpleMap({ onDataUpdated }) {
 
     const loadFeaturesFromAPI = async () => {
         try {
+            vectorSource.current.clear();
+            const format = new WKT();
             const res = await getLocations();
             const response = res.data || res;
 
             if (!Array.isArray(response)) return;
 
-            const format = new WKT();
-            const features = response.map(item => {
-                if (!item.wkt) return null;
+            response.forEach(item => {
+                if (!item.wkt) return;
                 try {
                     const projection = isLikelyEPSG3857(item.wkt) ? 'EPSG:3857' : 'EPSG:4326';
                     const feature = format.readFeature(item.wkt, {
@@ -86,33 +91,23 @@ export default function SimpleMap({ onDataUpdated }) {
                     });
                     feature.setId(item.id);
                     feature.setProperties({ name: item.name });
-                    return feature;
+                    vectorSource.current.addFeature(feature);
                 } catch (err) {
                     console.warn('WKT Parse Hatası:', item.wkt, err);
-                    return null;
                 }
-            }).filter(f => f !== null);
+            });
 
-            vectorSource.current.clear();
-            vectorSource.current.addFeatures(features);
-
-            if (onDataUpdated) {
-                onDataUpdated();
+            const extent = vectorSource.current.getExtent();
+            if (!isNaN(extent[0])) {
+                mapInstance.current.getView().fit(extent, {
+                    padding: [50, 50, 50, 50],
+                    maxZoom: 15
+                });
             }
+
+            mapInstance.current.updateSize();
         } catch (err) {
             console.error('API Hatası:', err);
-        }
-    };
-
-    const getFeatureCenter = (feature) => {
-        const geometry = feature.getGeometry();
-        const type = geometry.getType();
-
-        if (type === 'Point') {
-            return geometry.getCoordinates();
-        } else {
-            const extent = geometry.getExtent();
-            return getCenter(extent);
         }
     };
 
@@ -121,15 +116,9 @@ export default function SimpleMap({ onDataUpdated }) {
             target: mapRef.current,
             layers: [
                 new TileLayer({ source: new OSM() }),
-                new VectorLayer({
-                    source: vectorSource.current,
-                    style: styleFunction
-                })
+                new VectorLayer({ source: vectorSource.current, style: styleFunction })
             ],
-            view: new View({
-                center: fromLonLat([34, 39]),
-                zoom: 6
-            })
+            view: new View({ center: fromLonLat([34, 39]), zoom: 6 })
         });
 
         overlayRef.current = new Overlay({
@@ -143,23 +132,8 @@ export default function SimpleMap({ onDataUpdated }) {
 
         const addInteraction = () => {
             const type = typeSelectRef.current.value;
-            if (type === 'None') {
-                if (drawRef.current) {
-                    mapInstance.current.removeInteraction(drawRef.current);
-                    drawRef.current = null;
-                }
-                return;
-            }
-
-            if (drawRef.current) {
-                mapInstance.current.removeInteraction(drawRef.current);
-            }
-
-            const draw = new Draw({
-                source: vectorSource.current,
-                type,
-                freehand: false
-            });
+            if (type === 'None') return;
+            const draw = new Draw({ source: vectorSource.current, type });
 
             draw.on('drawend', async (event) => {
                 const feature = event.feature;
@@ -167,13 +141,15 @@ export default function SimpleMap({ onDataUpdated }) {
 
                 const name = prompt("Bu objeye bir isim verin:");
                 if (!name) {
-                    vectorSource.current.removeFeature(feature);
+                    draw.abortDrawing();
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
                     return;
                 }
 
                 try {
                     await addData({ name, wkt });
                     await loadFeaturesFromAPI();
+                    if (onDataUpdated) onDataUpdated(); // Notify table of update
 
                     const selectedIcon = iconSelectRef.current.value;
                     if (selectedIcon !== "none") {
@@ -197,20 +173,22 @@ export default function SimpleMap({ onDataUpdated }) {
                         const geometry = feature.getGeometry();
                         let iconFeature;
                         if (geometry.getType() === 'Point') {
-                            iconFeature = new Feature(geometry.clone());
-                        } else {
-                            const center = getFeatureCenter(feature);
-                            iconFeature = new Feature(new Point(center));
+                            iconFeature = new Feature(new Point(geometry.getCoordinates()));
+                        } else if (geometry.getType() === 'LineString') {
+                            const coords = geometry.getCoordinates();
+                            iconFeature = new Feature(new Point(coords[coords.length - 1]));
+                        } else if (geometry.getType() === 'Polygon') {
+                            iconFeature = new Feature(new Point(geometry.getInteriorPoint().getCoordinates()));
                         }
-
                         if (iconFeature) {
                             iconFeature.setStyle(iconStyle);
                             vectorSource.current.addFeature(iconFeature);
                         }
                     }
                 } catch (err) {
-                    console.error("Kayıt hatası:", err);
-                    vectorSource.current.removeFeature(feature);
+                    console.error("Kı kayıt hatası:", err);
+                    draw.abortDrawing();
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
                 }
             });
 
@@ -221,45 +199,46 @@ export default function SimpleMap({ onDataUpdated }) {
         addInteraction();
 
         typeSelectRef.current.onchange = () => {
+            if (drawRef.current) mapInstance.current.removeInteraction(drawRef.current);
             addInteraction();
         };
 
         undoButtonRef.current.addEventListener('click', () => {
-            if (drawRef.current) {
-                drawRef.current.removeLastPoint();
-            }
+            if (drawRef.current) drawRef.current.removeLastPoint();
         });
 
         const modify = new Modify({ source: vectorSource.current });
         mapInstance.current.addInteraction(modify);
         modify.on('modifyend', async (e) => {
             const features = e.features.getArray();
+
             for (let feature of features) {
                 const id = feature.getId();
-                if (!id) continue;
+                if (!id) continue; // id yoksa kaydetme
 
                 const wkt = new WKT().writeFeature(feature);
                 try {
-                    await updateLocation(id, { wkt });
-                    await loadFeaturesFromAPI();
+                    await updateLocation({ id, wkt });
+                    console.log(`ID ${id} başarıyla güncellendi.`);
+                    if (onDataUpdated) onDataUpdated(); // Notify table of update
                 } catch (err) {
                     console.error(`ID ${id} güncellenemedi:`, err);
                 }
             }
+
+            await loadFeaturesFromAPI(); // güncel halini tekrar yükle
         });
+
 
         const select = new Select();
         mapInstance.current.addInteraction(select);
         select.on('select', (e) => {
             const feature = e.selected[0];
-            setSelectedFeature(feature);
-
             if (feature) {
-                const coordinates = getFeatureCenter(feature);
+                const coordinates = feature.getGeometry().getFirstCoordinate();
                 const id = feature.getId();
                 const name = feature.get('name');
                 const wkt = new WKT().writeFeature(feature);
-
                 popupContentRef.current.innerHTML = `
                     <strong>ID:</strong> ${id}<br/>
                     <strong>Name:</strong> ${name}<br/>
@@ -273,6 +252,42 @@ export default function SimpleMap({ onDataUpdated }) {
 
         loadFeaturesFromAPI();
         return () => mapInstance.current.setTarget(undefined);
+    }, [dataUpdated]);
+
+    useEffect(() => {
+        let toggle = true;
+
+        const animate = () => {
+            vectorSource.current.getFeatures().forEach((feature) => {
+                if (feature.getGeometry().getType() === 'Point') {
+                    const fillColor = toggle ? 'red' : 'white';
+                    const strokeColor = toggle ? 'white' : 'red';
+
+                    const style = new Style({
+                        image: new CircleStyle({
+                            radius: 8,
+                            fill: new Fill({ color: fillColor }),
+                            stroke: new Stroke({ color: strokeColor, width: 3 }),
+                        }),
+                        text: new Text({
+                            text: String(feature.getId() || ''),
+                            font: 'bold 12px Arial',
+                            fill: new Fill({ color: '#000' }),
+                            stroke: new Stroke({ color: '#fff', width: 2 }),
+                            offsetY: -15,
+                        }),
+                    });
+
+                    feature.setStyle(style);
+                }
+            });
+
+            toggle = !toggle;
+            mapInstance.current && mapInstance.current.render();
+            setTimeout(animate, 800); // her 0.5 saniyede bir renk değişimi
+        };
+
+        animate();
     }, []);
 
     return (
@@ -312,9 +327,10 @@ export default function SimpleMap({ onDataUpdated }) {
 
                             try {
                                 await addData({name: address, wkt});
-                                await loadFeaturesFromAPI();
+                                vectorSource.current.addFeature(feature);
 
-                                const extent = feature.getGeometry().getExtent();
+                                const featureGeom = feature.getGeometry();
+                                const extent = featureGeom.getExtent();
                                 mapInstance.current.getView().fit(extent, {
                                     padding: [50, 50, 50, 50],
                                     maxZoom: 17,
@@ -322,6 +338,7 @@ export default function SimpleMap({ onDataUpdated }) {
                                 });
 
                                 addressInputRef.current.value = '';
+                                if (onDataUpdated) onDataUpdated(); // Notify table of update
                             } catch (err) {
                                 console.error('Adres kaydedilemedi:', err);
                                 alert('Kaydedilirken hata oluştu');
@@ -333,7 +350,6 @@ export default function SimpleMap({ onDataUpdated }) {
                         📍 Ekle
                     </button>
                 </div>
-
                 <select ref={typeSelectRef} defaultValue="Point" className="custom-select">
                     <option value="None">Seçim Yap</option>
                     <option value="Point">Nokta</option>

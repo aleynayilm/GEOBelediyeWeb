@@ -3,7 +3,7 @@ import {getData, deleteData, updateLocation, addData, deleteLocation} from '../.
 import { FiEdit2, FiTrash2, FiSave, FiPlusCircle } from 'react-icons/fi';
 import '../../Css/Table.css';
 
-export default function Table({ onDataChanged }) {
+export default function Table({ onDataUpdate, dataUpdated }) {
     const [data, setData] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', wkt: '' });
@@ -12,11 +12,17 @@ export default function Table({ onDataChanged }) {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [dataUpdated]);
 
     const fetchData = async () => {
-        const response = await getData();
-        setData(response.data);
+        try {
+            const response = await getData();
+            setData(response.data || []); // Fallback to empty array if response.data is undefined
+        } catch (err) {
+            console.error('Error fetching data:', err);
+            alert('Veri yüklenirken hata oluştu.');
+            setData([]); // Reset data on error
+        }
     };
 
     const handleEdit = (item) => {
@@ -25,22 +31,32 @@ export default function Table({ onDataChanged }) {
     };
 
     const handleSave = async () => {
-        const updatedData = {
-            id: editingId,
-            name: formData.name,
-            wkt: formData.wkt,
-        };
+        try {
+            const updatedData = {
+                id: editingId,
+                name: formData.name,
+                wkt: formData.wkt,
+            };
 
-        await updateLocation(editingId, updatedData);
-        setEditingId(null);
-        await fetchData();
-        if (onDataChanged) onDataChanged(); // Harita güncelle
+            await updateLocation(editingId, updatedData);
+            setEditingId(null);
+            await fetchData();
+            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+        } catch (err) {
+            console.error('Error updating data:', err);
+            alert('Veri güncellenirken hata oluştu.');
+        }
     };
 
     const handleDelete = async (id) => {
-        await deleteLocation(id);
-        await fetchData();
-        if (onDataChanged) onDataChanged(); // Harita güncelle
+        try {
+            await deleteLocation(id);
+            await fetchData();
+            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+        } catch (err) {
+            console.error('Error deleting data:', err);
+            alert('Veri silinirken hata oluştu.');
+        }
     };
 
     const handleAdd = async () => {
@@ -49,11 +65,16 @@ export default function Table({ onDataChanged }) {
             return;
         }
 
-        await addData(newItem);
-        setNewItem({ name: '', wkt: '' });
-        setShowAddForm(false);
-        await fetchData();
-        if (onDataChanged) onDataChanged(); // Harita güncelle
+        try {
+            await addData(newItem);
+            setNewItem({ name: '', wkt: '' });
+            setShowAddForm(false);
+            await fetchData();
+            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+        } catch (err) {
+            console.error('Error adding data:', err);
+            alert('Veri eklenirken hata oluştu.');
+        }
     };
 
     return (
