@@ -257,15 +257,30 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
         select.on('select', (e) => {
             const feature = e.selected[0];
             if (feature) {
-                const coordinates = feature.getGeometry().getFirstCoordinate();
+                const geometry = feature.getGeometry();
+                const coordinates = geometry.getFirstCoordinate();
                 const id = feature.getId();
                 const name = feature.get('name');
                 const wkt = new WKT().writeFeature(feature);
+
+                let extraInfo = '';
+
+                // EPSG:3857 ölçü birimi metre
+                if (geometry.getType() === 'LineString') {
+                    const length = geometry.getLength(); // metre
+                    extraInfo = `<br/><strong>Uzunluk:</strong> ${length.toFixed(2)} m`;
+                } else if (geometry.getType() === 'Polygon') {
+                    const area = geometry.getArea(); // m²
+                    const km2 = (area / 1e6).toFixed(4);
+                    extraInfo = `<br/><strong>Alan:</strong> ${km2} km²`;
+                }
+
                 popupContentRef.current.innerHTML = `
-                    <strong>ID:</strong> ${id}<br/>
-                    <strong>Name:</strong> ${name}<br/>
-                    <strong>WKT:</strong><br/><small>${wkt}</small>
-                `;
+            <strong>ID:</strong> ${id}<br/>
+            <strong>Name:</strong> ${name}<br/>
+            <strong>WKT:</strong><br/><small>${wkt}</small>
+            ${extraInfo}
+        `;
                 overlayRef.current.setPosition(coordinates);
             } else {
                 overlayRef.current.setPosition(undefined);
