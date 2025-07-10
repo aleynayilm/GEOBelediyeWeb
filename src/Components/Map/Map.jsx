@@ -30,6 +30,7 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
     const addressInputRef = useRef();
+
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
         const baseStyle = (() => {
@@ -133,6 +134,12 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
         const addInteraction = () => {
             const type = typeSelectRef.current.value;
             if (type === 'None') return;
+
+            // Update undo button visibility
+            if (undoButtonRef.current) {
+                undoButtonRef.current.style.display = type === 'Point' ? 'none' : 'inline-block';
+            }
+
             const draw = new Draw({ source: vectorSource.current, type });
 
             draw.on('drawend', async (event) => {
@@ -149,8 +156,14 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
                 try {
                     await addData({ name, wkt });
                     await loadFeaturesFromAPI();
-                    if (onDataUpdated) onDataUpdated(); // Notify table of update
-
+                    if (onDataUpdated) onDataUpdated();
+                    const featureGeom = feature.getGeometry();
+                    const extent = featureGeom.getExtent();
+                    mapInstance.current.getView().fit(extent, {
+                        padding: [50, 50, 50, 50],
+                        maxZoom: 18, // Increased for closer zoom
+                        duration: 1000
+                    });
                     const selectedIcon = iconSelectRef.current.value;
                     if (selectedIcon !== "none") {
                         const iconText = {
@@ -186,7 +199,7 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
                         }
                     }
                 } catch (err) {
-                    console.error("Kı kayıt hatası:", err);
+                    console.error("Kayıt hatası:", err);
                     draw.abortDrawing();
                     setTimeout(() => vectorSource.current.removeFeature(feature), 0);
                 }
@@ -197,6 +210,16 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
         };
 
         addInteraction();
+
+        // Add ESC key handler to cancel drawing
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape' && drawRef.current) {
+                drawRef.current.abortDrawing();
+            }
+        };
+
+        // Add keydown event listener
+        document.addEventListener('keydown', handleKeyDown);
 
         typeSelectRef.current.onchange = () => {
             if (drawRef.current) mapInstance.current.removeInteraction(drawRef.current);
@@ -214,21 +237,20 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
 
             for (let feature of features) {
                 const id = feature.getId();
-                if (!id) continue; // id yoksa kaydetme
+                if (!id) continue;
 
                 const wkt = new WKT().writeFeature(feature);
                 try {
                     await updateLocation({ id, wkt });
                     console.log(`ID ${id} başarıyla güncellendi.`);
-                    if (onDataUpdated) onDataUpdated(); // Notify table of update
+                    if (onDataUpdated) onDataUpdated();
                 } catch (err) {
                     console.error(`ID ${id} güncellenemedi:`, err);
                 }
             }
 
-            await loadFeaturesFromAPI(); // güncel halini tekrar yükle
+            await loadFeaturesFromAPI();
         });
-
 
         const select = new Select();
         mapInstance.current.addInteraction(select);
@@ -251,7 +273,12 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
         });
 
         loadFeaturesFromAPI();
-        return () => mapInstance.current.setTarget(undefined);
+
+        // Cleanup event listener
+        return () => {
+            mapInstance.current.setTarget(undefined);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, [dataUpdated]);
 
     useEffect(() => {
@@ -284,7 +311,7 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
 
             toggle = !toggle;
             mapInstance.current && mapInstance.current.render();
-            setTimeout(animate, 800); // her 0.5 saniyede bir renk değişimi
+            setTimeout(animate, 800);
         };
 
         animate();
@@ -333,12 +360,12 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
                                 const extent = featureGeom.getExtent();
                                 mapInstance.current.getView().fit(extent, {
                                     padding: [50, 50, 50, 50],
-                                    maxZoom: 17,
+                                    maxZoom: 18, // Increased for closer zoom
                                     duration: 1000
                                 });
 
                                 addressInputRef.current.value = '';
-                                if (onDataUpdated) onDataUpdated(); // Notify table of update
+                                if (onDataUpdated) onDataUpdated();
                             } catch (err) {
                                 console.error('Adres kaydedilemedi:', err);
                                 alert('Kaydedilirken hata oluştu');
@@ -363,7 +390,11 @@ export default function SimpleMap({ dataUpdated, onDataUpdated }) {
                     <option value="plane">✈️ Uçak</option>
                     <option value="pin">📍 Pin</option>
                 </select>
-                <button ref={undoButtonRef} className="custom-button">
+                <button
+                    ref={undoButtonRef}
+                    className="custom-button"
+                    style={{ display: typeSelectRef.current?.value === 'Point' ? 'none' : 'inline-block' }}
+                >
                     ⟲ Geri Al
                 </button>
             </div>
