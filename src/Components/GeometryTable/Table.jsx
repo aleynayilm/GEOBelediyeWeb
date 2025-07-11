@@ -28,7 +28,7 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
         }
     };
 
-    // Pagination hesaplamaları
+
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);

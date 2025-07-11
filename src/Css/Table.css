@@ -267,3 +267,34 @@
     max-height: 650px;
     overflow-y: auto;
 }
+.popup-buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.popup-edit-btn, .popup-delete-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.popup-edit-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.popup-delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.popup-edit-btn:hover {
+    background-color: #45a049;
+}
+
+.popup-delete-btn:hover {
+    background-color: #d32f2f;
+}

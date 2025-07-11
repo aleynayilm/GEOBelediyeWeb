@@ -13,7 +13,7 @@ import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
 import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
-import { getData as getLocations, addData, updateLocation } from '../../Api/api';
+import {getData as getLocations, addData, updateLocation, deleteLocation} from '../../Api/api';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { geocodeAddress } from "../Geocode";
@@ -32,7 +32,13 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
     const addressInputRef = useRef();
-
+    const showConfirmation = (message) => {
+        return new Promise((resolve) => {
+            // You can replace this with a proper modal/dialog component
+            const shouldProceed = window.confirm(message); // For now, we'll keep using confirm
+            resolve(shouldProceed);
+        });
+    };
     useImperativeHandle(ref, () => ({
         focusOnFeature
     }));
@@ -374,15 +380,68 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 } else if (geometry.getType() === 'Circle') {
                     const area = Math.PI * Math.pow(geometry.getRadius(), 2);
                     extraInfo = `<br/><strong>Yarıçap:</strong> ${geometry.getRadius().toFixed(2)} m<br/>
-                                 <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
+                         <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
                 }
 
                 popupContentRef.current.innerHTML = `
-                    <strong>ID:</strong> ${id}<br/>
-                    <strong>Name:</strong> ${name}<br/>
-                    <strong>WKT:</strong><br/><small>${wkt}</small>
-                    ${extraInfo}
-                `;
+            <strong>ID:</strong> ${id}<br/>
+            <strong>Name:</strong> ${name}<br/>
+            <strong>WKT:</strong><br/><small>${wkt}</small>
+            ${extraInfo}
+            <div class="popup-buttons">
+                <button class="popup-edit-btn">✏️ Düzenle</button>
+                <button class="popup-delete-btn">🗑️ Sil</button>
+            </div>
+        `;
+
+                // Add event listeners to the buttons
+                const editBtn = popupContentRef.current.querySelector('.popup-edit-btn');
+                const deleteBtn = popupContentRef.current.querySelector('.popup-delete-btn');
+
+                editBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const newName = prompt("Yeni ismi girin:", name);
+                    if (newName && newName !== name) {
+                        try {
+                            // DÜZELTME: API'nin beklediği formatı kullanıyoruz
+                            await updateLocation(id, {
+                                id: id,
+                                name: newName,
+                                wkt: wkt  // WKT'yi de gönderiyoruz
+                            });
+
+                            feature.set('name', newName);
+                            vectorSource.current.changed(); // Haritayı güncelle
+
+                            // Popup içeriğini yenile
+                            const currentPosition = overlayRef.current.getPosition();
+                            overlayRef.current.setPosition(undefined);
+                            setTimeout(() => overlayRef.current.setPosition(currentPosition), 100);
+
+                            if (onDataUpdated) onDataUpdated();
+                        } catch (err) {
+                            console.error('Güncelleme hatası:', err);
+                            alert(`Güncelleme başarısız oldu: ${err.message}`);
+                        }
+                    }
+                });
+
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    // eslint-disable-next-line no-restricted-globals
+                    if (confirm(`"${name}" adlı öğeyi silmek istediğinize emin misiniz?`)) {
+                        try {
+                            await deleteLocation(id);
+                            vectorSource.current.removeFeature(feature);
+                            overlayRef.current.setPosition(undefined);
+                            if (onDataUpdated) onDataUpdated();
+                        } catch (err) {
+                            console.error('Silme hatası:', err);
+                            alert('Silme başarısız oldu');
+                        }
+                    }
+                });
+
                 overlayRef.current.setPosition(coordinates);
             } else {
                 overlayRef.current.setPosition(undefined);
@@ -463,15 +522,55 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
         } else if (geometry.getType() === 'Circle') {
             const area = Math.PI * Math.pow(geometry.getRadius(), 2);
             extraInfo = `<br/><strong>Yarıçap:</strong> ${geometry.getRadius().toFixed(2)} m<br/>
-                         <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
+                     <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
         }
 
         popupContentRef.current.innerHTML = `
-            <strong>ID:</strong> ${id}<br/>
-            <strong>Name:</strong> ${name}<br/>
-            <strong>WKT:</strong><br/><small>${wkt}</small>
-            ${extraInfo}
-        `;
+        <strong>ID:</strong> ${id}<br/>
+        <strong>Name:</strong> ${name}<br/>
+        <strong>WKT:</strong><br/><small>${wkt}</small>
+        ${extraInfo}
+        <div class="popup-buttons">
+            <button class="popup-edit-btn">✏️ Düzenle</button>
+            <button class="popup-delete-btn">🗑️ Sil</button>
+        </div>
+    `;
+
+        // Add event listeners to the buttons
+        const editBtn = popupContentRef.current.querySelector('.popup-edit-btn');
+        const deleteBtn = popupContentRef.current.querySelector('.popup-delete-btn');
+
+        editBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const newName = prompt("Yeni ismi girin:", name);
+            if (newName && newName !== name) {
+                try {
+                    await updateLocation({ id, name: newName, wkt });
+                    feature.set('name', newName);
+                    if (onDataUpdated) onDataUpdated();
+                } catch (err) {
+                    console.error('Güncelleme hatası:', err);
+                    alert('Güncelleme başarısız oldu');
+                }
+            }
+        });
+
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const shouldDelete = await showConfirmation(`"${name}" adlı öğeyi silmek istediğinize emin misiniz?`);
+            if (shouldDelete) {
+                try {
+                    await deleteLocation(id);
+                    vectorSource.current.removeFeature(feature);
+                    overlayRef.current.setPosition(undefined);
+                    if (onDataUpdated) onDataUpdated();
+                } catch (err) {
+                    console.error('Silme hatası:', err);
+                    alert('Silme başarısız oldu');
+                }
+            }
+        });
+
         overlayRef.current.setPosition(coordinates);
     };
 
