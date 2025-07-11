@@ -17,9 +17,7 @@ import { getData as getLocations, addData, updateLocation } from '../../Api/api'
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { geocodeAddress } from "../Geocode";
-import { Circle } from 'ol/geom';
-import { fromCircle } from 'ol/geom/Polygon'; // Doğru import yolu
-
+import { fromCircle } from 'ol/geom/Polygon';
 const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const mapRef = useRef();
     const typeSelectRef = useRef();
@@ -153,153 +151,87 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 undoButtonRef.current.style.display = type === 'Point' || type === 'Circle' ? 'none' : 'inline-block';
             }
 
-            if (drawRef.current) {
-                mapInstance.current.removeInteraction(drawRef.current);
-            }
+            const draw = new Draw({ source: vectorSource.current, type });
 
-            if (type === 'Circle') {
-                const draw = new Draw({
-                    source: vectorSource.current,
-                    type: 'Point',
-                    style: styleFunction
-                });
+            draw.on('drawend', async (event) => {
+                const feature = event.feature;
+                let geometry = feature.getGeometry();
+                let wkt;
 
-                draw.on('drawend', async (event) => {
-                    const pointFeature = event.feature;
-                    const center = pointFeature.getGeometry().getCoordinates();
-                    const radius = prompt("Daire yarıçapı girin (metre):", "1000");
+                // Circle'ı Polygon'a dönüştür (WKT için gerekli)
+                if (geometry.getType() === 'Circle') {
+                    const polygon = fromCircle(geometry, 64); // 64 segmentli polygon
+                    wkt = new WKT().writeFeature(new Feature(polygon));
+                } else {
+                    wkt = new WKT().writeFeature(feature);
+                }
 
-                    if (!radius) {
-                        vectorSource.current.removeFeature(pointFeature);
-                        return;
-                    }
+                const name = prompt("Bu objeye bir isim verin:");
+                if (!name) {
+                    draw.abortDrawing();
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
+                    return;
+                }
 
-                    const circle = new Circle(center, Number(radius));
-                    const circleFeature = new Feature(circle);
-                    circleFeature.setProperties(pointFeature.getProperties());
+                try {
+                    await addData({ name, wkt });
+                    await loadFeaturesFromAPI();
+                    if (onDataUpdated) onDataUpdated();
 
-                    vectorSource.current.removeFeature(pointFeature);
-                    vectorSource.current.addFeature(circleFeature);
+                    const featureGeom = geometry.getType() === 'Circle' ? fromCircle(geometry, 64) : geometry;
+                    const extent = featureGeom.getExtent();
 
-                    const polygon = fromCircle(circle, 64);
-                    const wkt = new WKT().writeGeometry(polygon);
+                    mapInstance.current.getView().fit(extent, {
+                        padding: [50, 50, 50, 50],
+                        maxZoom: 18,
+                        duration: 1000
+                    });
 
-                    const name = prompt("Bu daireye bir isim verin:");
-                    if (!name) {
-                        vectorSource.current.removeFeature(circleFeature);
-                        return;
-                    }
+                    const selectedIcon = iconSelectRef.current.value;
+                    if (selectedIcon !== "none") {
+                        const iconText = {
+                            flag: "🚩",
+                            star: "⭐",
+                            plane: "✈️",
+                            pin: "📍"
+                        }[selectedIcon];
 
-                    try {
-                        await addData({ name, wkt });
-                        await loadFeaturesFromAPI();
-                        if (onDataUpdated) onDataUpdated();
-
-                        mapInstance.current.getView().fit(circleFeature.getGeometry().getExtent(), {
-                            padding: [50, 50, 50, 50],
-                            maxZoom: 18,
-                            duration: 1000
+                        const iconStyle = new Style({
+                            text: new Text({
+                                text: iconText,
+                                font: '20px sans-serif',
+                                offsetY: -20,
+                                fill: new Fill({ color: '#000' }),
+                                stroke: new Stroke({ color: '#fff', width: 2 })
+                            })
                         });
 
-                        const selectedIcon = iconSelectRef.current.value;
-                        if (selectedIcon !== "none") {
-                            const iconText = {
-                                flag: "🚩",
-                                star: "⭐",
-                                plane: "✈️",
-                                pin: "📍"
-                            }[selectedIcon];
+                        let iconFeature;
+                        if (geometry.getType() === 'Point') {
+                            iconFeature = new Feature(new Point(geometry.getCoordinates()));
+                        } else if (geometry.getType() === 'LineString') {
+                            const coords = geometry.getCoordinates();
+                            iconFeature = new Feature(new Point(coords[coords.length - 1]));
+                        } else if (geometry.getType() === 'Polygon') {
+                            iconFeature = new Feature(new Point(geometry.getInteriorPoint().getCoordinates()));
+                        } else if (geometry.getType() === 'Circle') {
+                            iconFeature = new Feature(new Point(geometry.getCenter()));
+                        }
 
-                            const iconStyle = new Style({
-                                text: new Text({
-                                    text: iconText,
-                                    font: '20px sans-serif',
-                                    offsetY: -20,
-                                    fill: new Fill({ color: '#000' }),
-                                    stroke: new Stroke({ color: '#fff', width: 2 })
-                                })
-                            });
-
-                            const iconFeature = new Feature(new Point(center));
+                        if (iconFeature) {
                             iconFeature.setStyle(iconStyle);
                             vectorSource.current.addFeature(iconFeature);
                         }
-                    } catch (err) {
-                        console.error("Kayıt hatası:", err);
-                        vectorSource.current.removeFeature(circleFeature);
                     }
-                });
+                } catch (err) {
+                    console.error("Kayıt hatası:", err);
+                    draw.abortDrawing();
+                    setTimeout(() => vectorSource.current.removeFeature(feature), 0);
+                }
+            });
 
-                mapInstance.current.addInteraction(draw);
-                drawRef.current = draw;
-            } else {
-                const draw = new Draw({ source: vectorSource.current, type });
-                draw.on('drawend', async (event) => {
-                    const feature = event.feature;
-                    const wkt = new WKT().writeFeature(feature);
-
-                    const name = prompt("Bu objeye bir isim verin:");
-                    if (!name) {
-                        draw.abortDrawing();
-                        setTimeout(() => vectorSource.current.removeFeature(feature), 0);
-                        return;
-                    }
-
-                    try {
-                        await addData({ name, wkt });
-                        await loadFeaturesFromAPI();
-                        if (onDataUpdated) onDataUpdated();
-                        const featureGeom = feature.getGeometry();
-                        const extent = featureGeom.getExtent();
-                        mapInstance.current.getView().fit(extent, {
-                            padding: [50, 50, 50, 50],
-                            maxZoom: 18,
-                            duration: 1000
-                        });
-                        const selectedIcon = iconSelectRef.current.value;
-                        if (selectedIcon !== "none") {
-                            const iconText = {
-                                flag: "🚩",
-                                star: "⭐",
-                                plane: "✈️",
-                                pin: "📍"
-                            }[selectedIcon];
-
-                            const iconStyle = new Style({
-                                text: new Text({
-                                    text: iconText,
-                                    font: '20px sans-serif',
-                                    offsetY: -20,
-                                    fill: new Fill({ color: '#000' }),
-                                    stroke: new Stroke({ color: '#fff', width: 2 })
-                                })
-                            });
-
-                            const geometry = feature.getGeometry();
-                            let iconFeature;
-                            if (geometry.getType() === 'Point') {
-                                iconFeature = new Feature(new Point(geometry.getCoordinates()));
-                            } else if (geometry.getType() === 'LineString') {
-                                const coords = geometry.getCoordinates();
-                                iconFeature = new Feature(new Point(coords[coords.length - 1]));
-                            } else if (geometry.getType() === 'Polygon') {
-                                iconFeature = new Feature(new Point(geometry.getInteriorPoint().getCoordinates()));
-                            }
-                            if (iconFeature) {
-                                iconFeature.setStyle(iconStyle);
-                                vectorSource.current.addFeature(iconFeature);
-                            }
-                        }
-                    } catch (err) {
-                        console.error("Kayıt hatası:", err);
-                        draw.abortDrawing();
-                        setTimeout(() => vectorSource.current.removeFeature(feature), 0);
-                    }
-                });
-
-                mapInstance.current.addInteraction(draw);
-                drawRef.current = draw;
-            }
+            mapInstance.current.addInteraction(draw);
+            drawRef.current = draw;
         };
 
         addInteraction();
@@ -330,14 +262,7 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 const id = feature.getId();
                 if (!id) continue;
 
-                let wkt;
-                if (feature.getGeometry().getType() === 'Circle') {
-                    const polygon = fromCircle(feature.getGeometry(), 64);
-                    wkt = new WKT().writeGeometry(polygon);
-                } else {
-                    wkt = new WKT().writeFeature(feature);
-                }
-
+                const wkt = new WKT().writeFeature(feature);
                 try {
                     await updateLocation({ id, wkt });
                     console.log(`ID ${id} başarıyla güncellendi.`);
@@ -356,13 +281,10 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             const feature = e.selected[0];
             if (feature) {
                 const geometry = feature.getGeometry();
-                const coordinates = geometry.getType() === 'Circle' ?
-                    geometry.getCenter() : geometry.getFirstCoordinate();
+                const coordinates = geometry.getType() === 'Circle' ? geometry.getCenter() : geometry.getFirstCoordinate();
                 const id = feature.getId();
                 const name = feature.get('name');
-                const wkt = geometry.getType() === 'Circle' ?
-                    new WKT().writeGeometry(fromCircle(geometry, 64)) :
-                    new WKT().writeFeature(feature);
+                const wkt = new WKT().writeFeature(feature);
 
                 let extraInfo = '';
                 if (geometry.getType() === 'LineString') {
@@ -372,8 +294,9 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                     const area = geometry.getArea();
                     extraInfo = `<br/><strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
                 } else if (geometry.getType() === 'Circle') {
-                    const area = Math.PI * Math.pow(geometry.getRadius(), 2);
-                    extraInfo = `<br/><strong>Yarıçap:</strong> ${geometry.getRadius().toFixed(2)} m<br/>
+                    const radius = geometry.getRadius();
+                    const area = Math.PI * radius * radius;
+                    extraInfo = `<br/><strong>Yarıçap:</strong> ${radius.toFixed(2)} m<br/>
                                  <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
                 }
 
@@ -446,12 +369,9 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             duration: 1000
         });
 
-        const wkt = geometry.getType() === 'Circle' ?
-            new WKT().writeGeometry(fromCircle(geometry, 64)) :
-            new WKT().writeFeature(feature);
+        const wkt = new WKT().writeFeature(feature);
         const name = feature.get('name');
-        const coordinates = geometry.getType() === 'Circle' ?
-            geometry.getCenter() : geometry.getFirstCoordinate();
+        const coordinates = geometry.getType() === 'Circle' ? geometry.getCenter() : geometry.getFirstCoordinate();
 
         let extraInfo = '';
         if (geometry.getType() === 'LineString') {
@@ -461,8 +381,9 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             const area = geometry.getArea();
             extraInfo = `<br/><strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
         } else if (geometry.getType() === 'Circle') {
-            const area = Math.PI * Math.pow(geometry.getRadius(), 2);
-            extraInfo = `<br/><strong>Yarıçap:</strong> ${geometry.getRadius().toFixed(2)} m<br/>
+            const radius = geometry.getRadius();
+            const area = Math.PI * radius * radius;
+            extraInfo = `<br/><strong>Yarıçap:</strong> ${radius.toFixed(2)} m<br/>
                          <strong>Alan:</strong> ${(area / 1e6).toFixed(4)} km²`;
         }
 
