@@ -210,3 +210,60 @@
     display: flex;
     gap: 0.5rem;
 }
+/* Pagination Stilleri */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.pagination-btn {
+    background-color: #4299e1;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-btn:disabled {
+    background-color: #cbd5e0;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+/* Uzun metinler için stil */
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.wkt-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Tablo satır yüksekliği */
+.premium-table tr {
+    height: 60px;
+}
+
+/* Scroll için max-height */
+.table-responsive {
+    max-height: 650px;
+    overflow-y: auto;
+}

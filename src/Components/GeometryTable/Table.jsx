@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {getData, deleteData, updateLocation, addData, deleteLocation} from '../../Api/api';
-import { FiEdit2, FiTrash2, FiSave, FiPlusCircle } from 'react-icons/fi';
+import { getData, deleteData, updateLocation, addData, deleteLocation } from '../../Api/api';
+import { FiEdit2, FiTrash2, FiSave, FiPlusCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import '../../Css/Table.css';
 import SimpleMap from '../Map/Map';
 
@@ -10,6 +10,8 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
     const [formData, setFormData] = useState({ name: '', wkt: '' });
     const [newItem, setNewItem] = useState({ name: '', wkt: '' });
     const [showAddForm, setShowAddForm] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         fetchData();
@@ -18,12 +20,22 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
     const fetchData = async () => {
         try {
             const response = await getData();
-            setData(response.data || []); // Fallback to empty array if response.data is undefined
+            setData(response.data || []);
         } catch (err) {
             console.error('Error fetching data:', err);
             alert('Veri yüklenirken hata oluştu.');
-            setData([]); // Reset data on error
+            setData([]);
         }
+    };
+
+    // Pagination hesaplamaları
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
     };
 
     const handleEdit = (item) => {
@@ -32,6 +44,11 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
     };
 
     const handleSave = async () => {
+        if (formData.name.length > 50) {
+            alert("Mevki adı 50 karakterden uzun olamaz!");
+            return;
+        }
+
         try {
             const updatedData = {
                 id: editingId,
@@ -42,7 +59,7 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
             await updateLocation(editingId, updatedData);
             setEditingId(null);
             await fetchData();
-            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+            if (onDataUpdate) onDataUpdate();
         } catch (err) {
             console.error('Error updating data:', err);
             alert('Veri güncellenirken hata oluştu.');
@@ -53,7 +70,7 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
         try {
             await deleteLocation(id);
             await fetchData();
-            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+            if (onDataUpdate) onDataUpdate();
         } catch (err) {
             console.error('Error deleting data:', err);
             alert('Veri silinirken hata oluştu.');
@@ -66,12 +83,17 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
             return;
         }
 
+        if (newItem.name.length > 50) {
+            alert("Mevki adı 50 karakterden uzun olamaz!");
+            return;
+        }
+
         try {
             await addData(newItem);
             setNewItem({ name: '', wkt: '' });
             setShowAddForm(false);
             await fetchData();
-            if (onDataUpdate) onDataUpdate(); // Harita güncelle
+            if (onDataUpdate) onDataUpdate();
         } catch (err) {
             console.error('Error adding data:', err);
             alert('Veri eklenirken hata oluştu.');
@@ -92,8 +114,9 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
                 <div className="add-form">
                     <input
                         className="premium-input"
-                        placeholder="Mevki Adı"
+                        placeholder="Mevki Adı (max 50 karakter)"
                         value={newItem.name}
+                        maxLength={50}
                         onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                     />
                     <input
@@ -120,12 +143,12 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
                     </tr>
                     </thead>
                     <tbody>
-                    {data.map((item) => (
+                    {currentItems.map((item) => (
                         <tr
                             key={item.id}
                             onClick={() => mapRef.current?.focusOnFeature(item.id)}
                             className={editingId === item.id ? 'editing-active' : ''}
-                            style={{cursor: 'pointer'}}
+                            style={{ cursor: 'pointer' }}
                         >
                             <td>{item.id}</td>
                             <td>
@@ -133,10 +156,11 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
                                     <input
                                         className="premium-input"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                        maxLength={50}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
                                 ) : (
-                                    item.name
+                                    <div className="text-ellipsis">{item.name}</div>
                                 )}
                             </td>
                             <td>
@@ -144,24 +168,26 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
                                     <input
                                         className="premium-input"
                                         value={formData.wkt}
-                                        onChange={(e) => setFormData({...formData, wkt: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, wkt: e.target.value })}
                                     />
                                 ) : (
-                                    item.wkt
+                                    <div className="wkt-cell">
+                                        {item.wkt.length > 100 ? `${item.wkt.substring(0, 100)}...` : item.wkt}
+                                    </div>
                                 )}
                             </td>
                             <td className="action-cells">
                                 {editingId === item.id ? (
                                     <button className="btn save-btn" onClick={handleSave}>
-                                        <FiSave/> Kaydet
+                                        <FiSave /> Kaydet
                                     </button>
                                 ) : (
                                     <>
-                                        <button className="btn edit-btn" onClick={() => handleEdit(item)}>
-                                            <FiEdit2/> Düzenle
+                                        <button className="btn edit-btn" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                                            <FiEdit2 /> Düzenle
                                         </button>
-                                        <button className="btn delete-btn" onClick={() => handleDelete(item.id)}>
-                                            <FiTrash2/> Sil
+                                        <button className="btn delete-btn" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                                            <FiTrash2 /> Sil
                                         </button>
                                     </>
                                 )}
@@ -169,8 +195,30 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
                         </tr>
                     ))}
                     </tbody>
-
                 </table>
+            </div>
+
+            {/* Pagination Kontrolleri */}
+            <div className="pagination-controls">
+                <button
+                    className="btn pagination-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                >
+                    <FiChevronLeft /> Önceki
+                </button>
+
+                <span className="page-info">
+                    Sayfa {currentPage} / {totalPages}
+                </span>
+
+                <button
+                    className="btn pagination-btn"
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                >
+                    Sonraki <FiChevronRight />
+                </button>
             </div>
         </div>
     );
