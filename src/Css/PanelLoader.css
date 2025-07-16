@@ -1,0 +1,79 @@
+/* From Uiverse.io by mrhyddenn  — scaled + centered tweak */
+
+/* === Global scale knob (small bump ~20%) === */
+:root {
+    --ap-loader-scale: 1.2;
+    --ap-fall-distance: 100px; /* istersen 120px yap */
+}
+
+/* Loader pill */
+.loader {
+    position: relative;
+    width: 110px;
+    height: 30px;
+    background: #FF962FFF;
+    border-radius: 100px;
+}
+
+/* Center + scale everything inside the loading card */
+.ap-loading-card .ap-loading-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* translate shorthanda tarayıcı farkları vardı; transform kullan */
+    transform: translate(-50%, -50%) scale(var(--ap-loader-scale));
+    transform-origin: center;
+    display: block; /* flex değil */
+}
+
+/* Orange ball + shadow bump remains pixel-based (scaled by parent) */
+.loader::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    background: #FF7D00FF;
+    border-radius: 50%;
+    box-shadow: 40px 0 0 20px #FF7D00FF;
+}
+
+/* Snow container — spread flakes across width */
+.snow {
+    position: absolute; /* kapsayıcıya tam otur */
+    inset: 0;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    flex-wrap: wrap;          /* fazla flake varsa sonraki satırlara */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Snow flakes */
+.snow span {
+    display: block;
+    width: 3px;
+    height: 3px;
+    background: #FF7D00FF;
+    margin: 0 2px;
+    border-radius: 50%;
+    animation: snowing 5s linear infinite;
+    /* Fallback ekle: var(--i,1) */
+    animation-duration: calc(15s / (var(--i, 1)));
+    transform-origin: bottom;
+}
+
+/* Fall animation (distance variable) */
+@keyframes snowing {
+    0% {
+        transform: translateY(0px);
+    }
+    70% {
+        transform: translateY(var(--ap-fall-distance)) scale(1);
+    }
+    100% {
+        transform: translateY(var(--ap-fall-distance)) scale(0);
+    }
+}
