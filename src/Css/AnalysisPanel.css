@@ -275,3 +275,40 @@
         --ap-table-scroll-max: 220px;
     }
 }
+.ap-showy.ap-enter {
+    opacity: 0;
+    /* derinden gelsin */
+    transform:
+            perspective(1200px)
+            translateY(80px)
+            scale(0.72)
+            rotateX(-12deg);
+    filter: blur(6px);
+}
+
+.ap-showy.ap-entered {
+    opacity: 1;
+    transform:
+            perspective(1200px)
+            translateY(0)
+            scale(1)
+            rotateX(0deg);
+    filter: blur(0);
+    /* süreleri biraz daha “sahne” hissi için uzattık */
+    transition:
+            opacity .55s ease,
+            transform .65s cubic-bezier(.16,1.05,.3,1),
+            filter .45s ease;
+}
+
+/* Hafif “pop” overshoot (isteğe bağlı) */
+.ap-showy.ap-entered {
+    will-change: transform;
+}
+.ap-showy.ap-entered:active {
+    transform:
+            perspective(1200px)
+            translateY(0)
+            scale(.995)
+            rotateX(0deg);
+}

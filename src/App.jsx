@@ -93,7 +93,8 @@ export default function App() {
                             onEditClick={handleEditItems}
                             onEditMinCap={handleEditMinCap}
                             onSave={handleSave}
-                            className="ap-tall"
+
+                         className="ap-tall ap-showy"
                         />
                     </div>
                 </div>
