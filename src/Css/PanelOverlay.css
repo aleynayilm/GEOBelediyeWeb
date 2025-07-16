@@ -1,0 +1,71 @@
+/* PanelOverlay.css */
+
+/* Harita konteyneri: tam ekran */
+.app-map-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* scroll olmasın; harita taşarsa gizle */
+}
+
+/* Backdrop (karartı + blur) */
+.ap-backdrop {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+    background: rgba(0,0,0,0);     /* anim öncesi */
+    opacity: 0;
+    pointer-events: none;
+    transition: background .25s ease, opacity .25s ease;
+    z-index: 1000;                 /* harita üstü */
+}
+
+/* gösterildiğinde */
+.ap-backdrop-show {
+    background: rgba(0,0,0,.35);
+    backdrop-filter: blur(2px);    /* hafif blur; destek yoksa sorun değil */
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Paneli içerir; tıklamayı panelde yakalar */
+.ap-backdrop-stop {
+    width: min(75vw, 1100px);   /* çok az kısalttık */
+    max-width: min(75vw, 1100px);
+    max-height: 100%;           /* biraz daha uzun; ekranın %88'i */
+    overflow: visible;
+
+    /* içerik sığmadığında panel içi belirler */
+}
+
+/* Mobil/küçük ekran: tam genişlik olsun, taşmasın */
+@media (max-width: 768px) {
+    .ap-backdrop-stop {
+        width: calc(100vw - 32px);      /* kenarlarda nefes payı */
+        max-width: calc(100vw - 32px);
+        max-height: none;               /* içerik doğal uzasın */
+    }
+}
+/* === Panel Açma Tetik Butonu === */
+.ap-open-trigger {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1200;            /* panel overlay z-index:1000 idi; kapalıyken sorun yok */
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.65);
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    transition: background .15s ease, transform .15s ease;
+}
+.ap-open-trigger:hover {
+    background: rgba(0,0,0,.70);
+    transform: scale(1.02);
+}

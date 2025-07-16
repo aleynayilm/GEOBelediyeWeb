@@ -1,0 +1,277 @@
+:root {
+    /* Ölçekler */
+    --ap-radius-lg: 32px;      /* panel & büyük kart radius */
+    --ap-radius-sm: 12px;
+    --ap-space-xs: 4px;
+    --ap-space-sm: 8px;
+    --ap-space-md: 16px;
+    --ap-space-lg: 32px;
+
+    /* Tipografi */
+    --ap-font-title: 2.25rem;          /* Analiz Sonuçları başlığı */
+    --ap-font-metric-value: 3.75rem;   /* 16 / 1600 vb. */
+
+    /* Renk paleti (referans tasarımla uyumlu) */
+    --ap-color-card-orange: #ff962f;
+    --ap-color-card-orange-grad: #ff7d00;
+    --ap-color-card-blue: #ffffff;
+    --ap-color-card-blue-text: #2962ff;
+
+    --ap-color-bg: #ffffff;
+    --ap-shadow: 0 8px 32px rgba(0,0,0,.10);
+    --ap-border: rgba(0,0,0,.10);
+
+    --ap-btn-bg: #ffffff;
+    --ap-btn-bg-hover: #f7f7f7;
+    --ap-btn-border: rgba(0,0,0,.20);
+
+    --ap-save-bg: #00b16a;
+    --ap-save-bg-hover: #00a162;
+    --ap-save-text: #fff;
+}
+
+/* Root panel container */
+.ap-root {
+
+    /* Paneli viewport’a göre sınırla; içerik taşarsa panel içinde scroll */
+    max-height: calc(92vh - 0px); /* isteğe göre 95vh / 90vh yapabilirsin */
+    overflow-y: auto;
+    position: relative;
+    min-height: 50vh;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    max-width: 100%;
+    width: 100%;
+
+    padding: var(--ap-space-lg);
+    background: var(--ap-color-bg);
+    border-radius: var(--ap-radius-lg);
+    box-shadow: var(--ap-shadow);
+    pointer-events: none;       /* disabled until entered */
+    opacity: 0;
+    transform: scale(.92) translateY(40px);
+    transition:
+            opacity 0.4s ease,
+            transform 0.4s cubic-bezier(.16,1,.3,1);
+
+    /* Font yalnızca panel içinde değişsin */
+    font-family: "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
+    color: #0c0d0f;
+}
+.ap-root.ap-entered {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+/* Header */
+.ap-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ap-space-md);
+    margin-bottom: var(--ap-space-lg);
+}
+.ap-header h2 {
+    margin: 0;
+    font-size: var(--ap-font-title);
+    font-weight: 600;
+    line-height: 1.2;
+    color: #0c0d0f;
+}
+
+/* Header buttons */
+.ap-header-actions {
+    display: flex;
+    gap: var(--ap-space-sm);
+}
+.ap-btn {
+    padding: 6px 14px;
+    font-size: 0.95rem;
+    border-radius: var(--ap-radius-sm);
+    border: 1px solid var(--ap-btn-border);
+    background: var(--ap-btn-bg);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.ap-btn:hover {
+    background: var(--ap-btn-bg-hover);
+}
+
+/* Metric cards layout */
+.ap-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--ap-space-md);
+    margin-bottom: var(--ap-space-lg);
+}
+
+/* Base metric card */
+.ap-metric-card {
+    position: relative;
+    padding: var(--ap-space-lg) var(--ap-space-md);
+    border-radius: var(--ap-radius-lg);
+    background: #f9f9f9;
+    border: 1px solid var(--ap-border);
+    display: flex;
+    align-items: center;
+    min-height: 80px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.04);
+
+}
+.ap-metric-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ap-space-sm);
+}
+.ap-metric-label {
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0.95;
+}
+.ap-metric-value {
+    font-size: var(--ap-font-metric-value);
+    font-weight: 700;
+    line-height: 1;
+}
+.ap-metric-unit {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+/* Orange metric */
+.ap-metric-orange {
+    background: linear-gradient(
+            135deg,
+            var(--ap-color-card-orange),
+            var(--ap-color-card-orange-grad)
+    );
+    color: #fff;
+    overflow: hidden;
+    padding-right: 64px; /* space for edit stripe */
+    box-shadow: 0 4px 16px rgba(255,140,0,.35);
+}
+
+/* White stripe Pencil edit (DOKUNMADIĞIM BLOK) */
+.ap-metric-edit {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 56px;
+    height: 100%;
+    background: #fff;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-top-right-radius: var(--ap-radius-lg);
+    border-bottom-right-radius: var(--ap-radius-lg);
+    transition: background .15s ease;
+}
+.ap-metric-edit:hover {
+    background: #f0f0f0;
+}
+
+/* Blue metric */
+.ap-metric-blue {
+    background: var(--ap-color-card-blue);
+    color: var(--ap-color-card-blue-text);
+    border: 1px solid rgba(41,98,255,.25);
+    box-shadow: 0 2px 8px rgba(41,98,255,.08);
+}
+
+/* Table */
+.ap-table-wrapper {
+    width: 100%;
+}
+.ap-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--ap-space-md);
+    font-size: 0.95rem;
+}
+.ap-table th,
+.ap-table td {
+    padding: 10px 12px;
+    text-align: left;
+}
+.ap-table thead th {
+    font-weight: 600;
+    border-bottom: 1px solid var(--ap-border);
+}
+.ap-table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--ap-border);
+}
+
+/* Save btn */
+.ap-table-actions {
+    text-align: right;
+}
+.ap-save-btn {
+    padding: 8px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--ap-radius-sm);
+    background: var(--ap-save-bg);
+    color: var(--ap-save-text);
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.ap-save-btn:hover {
+    background: var(--ap-save-bg-hover);
+}
+
+/* Responsive stack on narrow screens */
+@media (max-width: 600px) {
+    .ap-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ap-header-actions {
+        justify-content: flex-start;
+    }
+    .ap-metrics {
+        grid-template-columns: 1fr;
+    }
+    .ap-metric-value {
+        font-size: 2.75rem;
+    }
+}
+@media (max-width: 600px) {
+    .ap-root {
+        min-height: auto;   /* doğal yükseklik */
+    }
+}
+/* === TABLO SATIR SAYISI >6 OLDUĞUNDA SCROLL === */
+/* Varsayılan maksimum scroll yüksekliği; gerekirse değiştir. */
+:root {
+    --ap-table-scroll-max: 300px; /* ~6 satır üstü için uygun; ekranına göre ayarla */
+}
+
+/* Scroll kapsayıcısı: sadece tabloyu sarar, Kaydet butonu sabit kalır */
+.ap-table-scroll {
+    max-height: var(--ap-table-scroll-max);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scroll içindeki tablo başlığı görünür kalsın (sticky opsiyonel) */
+/* Başlık sabit kalsın istiyorsan yorum satırını kaldır: */
+/*
+.ap-table-scroll .ap-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ap-color-bg);
+  z-index: 1;
+}
+*/
+
+/* Küçük ekranlarda (mobil) scroll yüksekliğini biraz kısalt */
+@media (max-width: 600px) {
+    :root {
+        --ap-table-scroll-max: 220px;
+    }
+}
