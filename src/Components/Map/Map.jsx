@@ -119,12 +119,12 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             });
 
             const extent = vectorSource.current.getExtent();
-            if (!isNaN(extent[0])) {
-                mapInstance.current.getView().fit(extent, {
-                    padding: [50, 50, 50, 50],
-                    maxZoom: 15
-                });
-            }
+            // if (!isNaN(extent[0])) {
+            //     mapInstance.current.getView().fit(extent, {
+            //         padding: [50, 50, 50, 50],
+            //         maxZoom: 15
+            //     });
+            // }
 
             mapInstance.current.updateSize();
         } catch (err) {

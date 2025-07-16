@@ -346,15 +346,7 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated, showNotification }, 
             }
         });
 
-        const select = new Select({
-            condition: (mapBrowserEvent) => {
-                // Sadece tek tıklamalarda ve belirli durumlarda seçim yap
-                return mapBrowserEvent.type === 'click' &&
-                    !drawRef.current &&
-                    !isModifying;
-            },
-            layers: [VectorLayer] // Sadece vektör katmanında seçim yap
-        });
+        const select = new Select();
         mapInstance.current.addInteraction(select);
         select.on('select', (e) => {
             const feature = e.selected[0];

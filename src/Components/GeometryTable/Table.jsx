@@ -20,10 +20,11 @@ export default function Table({ mapRef, onDataUpdate, dataUpdated }) {
     const fetchData = async () => {
         try {
             const response = await getData();
-            setData(response.data || []);
+            // Verileri ID'ye göre sırala (büyükten küçüğe)
+            const sortedData = (response.data || []).sort((a, b) => b.id - a.id);
+            setData(sortedData);
         } catch (err) {
             console.error('Error fetching data:', err);
-            alert('Veri yüklenirken hata oluştu.');
             setData([]);
         }
     };
