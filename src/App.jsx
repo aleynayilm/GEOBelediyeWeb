@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/MapWithoutDrawing';
 
-import { AnalysisPanel } from "../src/Components/Panel/Panel";
 import SideBar from './Components/SideBar/SideBar';
 
 import { AnalysisPanel } from "./Components/Panel/Panel";

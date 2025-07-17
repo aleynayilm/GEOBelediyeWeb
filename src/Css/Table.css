@@ -298,3 +298,6 @@
 .popup-delete-btn:hover {
     background-color: #d32f2f;
 }
+.ol-zoom {
+    display: none !important;
+}

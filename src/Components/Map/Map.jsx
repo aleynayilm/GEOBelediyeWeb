@@ -19,6 +19,7 @@ import Point from 'ol/geom/Point';
 import { geocodeAddress } from "../Geocode";
 import { Circle } from 'ol/geom';
 import { fromCircle } from 'ol/geom/Polygon'; // Doğru import yolu
+import { defaults as defaultControls } from 'ol/control';
 
 const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const mapRef = useRef();
@@ -119,12 +120,12 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             });
 
             const extent = vectorSource.current.getExtent();
-            // if (!isNaN(extent[0])) {
-            //     mapInstance.current.getView().fit(extent, {
-            //         padding: [50, 50, 50, 50],
-            //         maxZoom: 15
-            //     });
-            // }
+            if (!isNaN(extent[0])) {
+                mapInstance.current.getView().fit(extent, {
+                    padding: [50, 50, 50, 50],
+                    maxZoom: 15
+                });
+            }
 
             mapInstance.current.updateSize();
         } catch (err) {
@@ -139,7 +140,8 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 new TileLayer({ source: new OSM() }),
                 new VectorLayer({ source: vectorSource.current, style: styleFunction })
             ],
-            view: new View({ center: fromLonLat([34, 39]), zoom: 6 })
+            view: new View({ center: fromLonLat([34, 39]), zoom: 6 }),
+            controls: defaultControls({ zoom: false, rotate: false, attribution: false, })
         });
 
         overlayRef.current = new Overlay({
