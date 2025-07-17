@@ -32,6 +32,10 @@
 
 /* Paneli içerir; tıklamayı panelde yakalar */
 .ap-backdrop-stop {
+    transition:
+            background .45s ease,
+            opacity .45s ease,
+            backdrop-filter .45s ease;
     width: min(75vw, 1100px);   /* çok az kısalttık */
     max-width: min(75vw, 1100px);
     max-height: 100%;           /* biraz daha uzun; ekranın %88'i */
