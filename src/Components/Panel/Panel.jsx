@@ -13,6 +13,7 @@ export function AnalysisPanel({
                               }) {
     const [entered, setEntered] = useState(false);
 
+
     useEffect(() => {
         // allow next paint, then add enter class for transition
         const id = requestAnimationFrame(() => setEntered(true));
