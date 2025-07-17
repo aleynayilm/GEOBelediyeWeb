@@ -2,7 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/MapWithoutDrawing';
+
+import { AnalysisPanel } from "../src/Components/Panel/Panel";
+import SideBar from './Components/SideBar/SideBar';
+
 import { AnalysisPanel } from "./Components/Panel/Panel";
+
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
 import "../src/Css/PanelLoader.css";   // yeni loader css
@@ -62,6 +67,7 @@ export default function App() {
 
     return (
         <div className="app-map-wrapper">
+            <SideBar />
             <SimpleMap
                 ref={mapRef}
                 refreshTrigger={dataVersion}

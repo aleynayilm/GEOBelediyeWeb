@@ -1,0 +1,37 @@
+.sidebar-toggle-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+  
+  .sidebar-toggle-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+  
+  .sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .sidebar::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100% !important;
+      max-width: 300px;
+    }
+  }
