@@ -305,10 +305,3 @@
 .ap-showy.ap-entered {
     will-change: transform;
 }
-.ap-showy.ap-entered:active {
-    transform:
-            perspective(1200px)
-            translateY(0)
-            scale(.995)
-            rotateX(0deg);
-}
