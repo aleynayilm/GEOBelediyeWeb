@@ -5,11 +5,11 @@ import SimpleMap from './Components/Map/MapWithoutDrawing';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from "./Components/Panel/Panel";
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
+import Navbar from './Components/Navbar/Navbar';
 
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
-import "../src/Css/PanelLoader.css";   // yeni loader css
-import "./Css/PanelLoader.css";
+import "../src/Css/PanelLoader.css";
 
 
 export default function App() {
@@ -18,6 +18,8 @@ export default function App() {
     const [panelReady, setPanelReady] = useState(false); // loader -> panel
     const [panelVisible, setPanelVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     const mapRef = useRef();
 
     /* ESC ile kapat */
@@ -62,10 +64,13 @@ export default function App() {
         setShowPanel(false);
         setPanelReady(false);
     };
-
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
     return (
         <div className="app-map-wrapper">
-            <SideBar />
+            <Navbar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
+            <SideBar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
             <SimpleMap
                 ref={mapRef}
                 refreshTrigger={dataVersion}
@@ -79,6 +84,7 @@ export default function App() {
                     type="button"
                     className="ap-open-trigger"
                     onClick={() => setShowPanel(true)}
+                    style={{ marginTop: '60px' }}
                 >
                     Analiz Sonuçları
                 </button>
