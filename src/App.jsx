@@ -2,10 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/MapWithoutDrawing';
-
 import SideBar from './Components/SideBar/SideBar';
-
 import { AnalysisPanel } from "./Components/Panel/Panel";
+import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
 
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
@@ -33,7 +32,7 @@ export default function App() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    /* Panel açıldığında loader 3 sn */
+    /* Panel açıldığında loader*/
     useEffect(() => {
         if (!showPanel) {
             setPanelReady(false);
@@ -42,7 +41,7 @@ export default function App() {
         setPanelReady(false);
         const t = setTimeout(() => {
             setPanelReady(true);
-        }, 1500); // 3 saniye
+        }, 9000);
         return () => clearTimeout(t);
     }, [showPanel,panelVisible]);
 
@@ -96,7 +95,7 @@ export default function App() {
                         onClick={(e) => e.stopPropagation()}  // panel içi tık backdrop'a geçmesin
                     >
                         {!panelReady ? (
-                            <PanelLoadingCard />   // 3s loader
+                            <SimulationLoadingCard  />   // 6s loader
                         ) : (
                             <AnalysisPanel
                                 minCoverCount={16}
@@ -116,60 +115,3 @@ export default function App() {
     );
 }
 
-/* -------------------------
- * PanelLoadingCard
- * Panel boyutlu beyaz kart + Uiverse loader
- * ------------------------- */
-function PanelLoadingCard() {
-    return (
-        <div className="ap-root ap-loading-card ap-enter ap-entered">
-            <div className="ap-loading-center">
-                <div className="loader" role="status" aria-label="Yükleniyor">
-                    <div className="snow">
-                        <span style={{ animationDuration: `${15 / 11}s` }} />
-                        <span style={{ animationDuration: `${15 / 12}s` }} />
-                        <span style={{ animationDuration: `${15 / 15}s` }} />
-                        <span style={{ animationDuration: `${15 / 17}s` }} />
-                        <span style={{ animationDuration: `${15 / 18}s` }} />
-                        <span style={{ animationDuration: `${15 / 13}s` }} />
-                        <span style={{ animationDuration: `${15 / 14}s` }} />
-                        <span style={{ animationDuration: `${15 / 19}s` }} />
-                        <span style={{ animationDuration: `${15 / 20}s` }} />
-                        <span style={{ animationDuration: `${15 / 10}s` }} />
-                        <span style={{ animationDuration: `${15 / 18}s` }} />
-                        <span style={{ animationDuration: `${15 / 13}s` }} />
-                        <span style={{ animationDuration: `${15 / 14}s` }} />
-                        <span style={{ animationDuration: `${15 / 19}s` }} />
-                        <span style={{ animationDuration: `${15 / 20}s` }} />
-                        <span style={{ animationDuration: `${15 / 10}s` }} />
-                        <span style={{ animationDuration: `${15 / 18}s` }} />
-                        <span style={{ animationDuration: `${15 / 13}s` }} />
-                        <span style={{ animationDuration: `${15 / 14}s` }} />
-                        <span style={{ animationDuration: `${15 / 19}s` }} />
-                        <span style={{ animationDuration: `${15 / 20}s` }} />
-                        <span style={{ animationDuration: `${15 / 10}s` }} />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-
-
-/* Uiverse loader markup: kapsül + kar taneleri */
-function UniverseSnowLoader() {
-    // 20 adet parçacık; hız farklılığı için --i 5..24 arası
-    const flakes = Array.from({ length: 20 }).map((_, i) => {
-        const speed = 5 + i; // 5 ile 24 arası
-        return <span key={i} style={{ "--i": speed }} />;
-    });
-
-    return (
-        <div className="loader" role="status" aria-label="Yükleniyor">
-            <div className="snow">
-                {flakes}
-            </div>
-        </div>
-    );
-}

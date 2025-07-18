@@ -26,6 +26,114 @@
     display: block; /* flex değil */
 }
 
+/* Simülasyon animasyonu için merkez konumlandırma */
+.ap-loading-card .ap-simulation-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px; /* Elemanlar arası mesafeyi artır */
+    width: 100%;
+    text-align: center;
+    z-index: 10; /* Panelin üstünde görünsün */
+}
+
+/* Daktilo yazı stili */
+.ap-typewriter {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 30px;
+    justify-content: center;
+}
+
+.ap-typewriter.ap-success {
+    color: #22c55e; /* Başarılı mesaj için yeşil */
+}
+
+.ap-typewriter-text {
+    letter-spacing: 0.5px;
+}
+
+.ap-typewriter-cursor {
+    animation: blink 1s infinite;
+    font-weight: 600;
+    color: #ff6b35;
+}
+
+/* Cursor yanıp sönme animasyonu */
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* *** YENİ: Başarı konteyneri *** */
+.ap-success-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* *** YENİ: Tik animasyonu stilleri *** */
+.ap-checkmark-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ap-checkmark {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #22c55e;
+    stroke-miterlimit: 10;
+    animation: ap-checkmark-fade-in 0.3s ease-in-out;
+}
+
+.ap-checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke: #22c55e;
+    fill: none;
+    animation: ap-stroke-circle 0.8s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.ap-checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke: #22c55e;
+    animation: ap-stroke-check 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+/* *** YENİ: Tik animasyon keyframes *** */
+@keyframes ap-checkmark-fade-in {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ap-stroke-circle {
+    0% { stroke-dashoffset: 166; }
+    100% { stroke-dashoffset: 0; }
+}
+
+@keyframes ap-stroke-check {
+    0% { stroke-dashoffset: 48; }
+    100% { stroke-dashoffset: 0; }
+}
+
 /* Orange ball + shadow bump remains pixel-based (scaled by parent) */
 .loader::before {
     content: '';
