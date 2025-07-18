@@ -1,115 +1,200 @@
+/* Navbar.css */
 .custom-navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    background-color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 24px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    z-index: 1001;
-  }
-  
-  .navbar-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-  }
-  
-  .navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin-left: auto;
-  }
-  
-  .step-indicator {
-    background-color: #f3f4f6;
-    padding: 8px 16px;
-    border-radius: 9999px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-  }
-  
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #e5e7eb;
-    padding: 6px 12px;
-    border-radius: 9999px;
-  }
-  .username {
-    font-size: 13px;
-    color: #374151;
-  }
-  /* Kategori Dropdown Stilleri */
-.category-dropdown {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background-color: white;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-right: 24px;
+  padding: 0 24px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+  z-index: 1001;
 }
 
-.dropdown-trigger {
+/* Left Side Styles */
+.navbar-left {
   display: flex;
   align-items: center;
-  gap: 40px;
-  padding: 10px 16px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  gap: 16px;
+}
+
+.geo-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a56db;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-toggle-btn {
+  padding: 10px;
+  background-color: white;
+  border: none;
   border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #4b5563;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: #f3f4f6;
+}
+
+/* Center Button Styles */
+.project-start-btn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #1a56db 0%, #0ea5e9 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(26, 86, 219, 0.2);
+  letter-spacing: 0.5px;
+}
+
+.project-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 86, 219, 0.3);
+  background: linear-gradient(135deg, #164ccc 0%, #0d94d8 100%);
+}
+
+/* Right Side Filter Dropdown Styles */
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* İçeriği eşit dağıt */
+  padding: 10px 16px;
+  min-width: 280px; /* Sabit genişlik */
+  position: relative;
+  border-radius: 30px;
+
+
+  gap: 8px;
+
+  background-color: white;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 500;
   color: #475569;
-  min-width: 250px;
-  justify-content: space-between;
 }
 
-.dropdown-trigger:hover {
-  background-color: #f1f5f9;
+.filter-trigger:hover, .filter-trigger.active {
   border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-trigger .filter-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-trigger .filter-selected svg {
+  color: #3b82f6; /* Default icon color */
 }
 
 .chevron-icon {
   transition: transform 0.3s ease;
   color: #64748b;
+
 }
 
 .chevron-icon.rotated {
   transform: rotate(180deg);
 }
 
-.dropdown-menu {
+/* Filter Dropdown Menu */
+.dropdown-menu.filter-menu {
+  width: 280px; /* Aynı genişlik */
+  min-width: 280px;
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  top: calc(100% + 10px);
   right: 0;
   background-color: white;
-  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
   overflow: hidden;
   z-index: 1000;
   animation: dropdownSlide 0.3s ease;
+  padding: 0;
 }
-.app-title {
-  margin-left: 16px;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: #1f2937;
+
+.filter-header {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.filter-options {
+  padding: 8px 0;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #374151;
+  text-align: left;
+}
+
+.filter-option:hover {
+  background-color: #f8fafc;
+}
+
+.filter-option.active {
+  background-color: #f0f9ff;
+}
+
+.filter-option.active span {
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.option-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.filter-option:hover .option-icon {
+  transform: scale(1.1);
+}
+
+.filter-option.active .option-icon {
+  color: #1e40af;
 }
 
 @keyframes dropdownSlide {
@@ -123,159 +208,29 @@
   }
 }
 
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  color: #475569;
-  border-left: 4px solid transparent;
-}
-
-.dropdown-item:hover {
-  background-color: #f8fafc;
-  border-left-color: #3b82f6;
-  color: #1e40af;
-}
-
-.dropdown-item.active {
-  background-color: #eff6ff;
-  border-left-color: #3b82f6;
-  color: #1e40af;
-  font-weight: 500;
-}
-
-.category-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #cbd5e1;
-  transition: background-color 0.2s ease;
-}
-
-.category-dot.active {
-  background-color: #3b82f6;
-}
-
-.dropdown-item:hover .category-dot {
-  background-color: #60a5fa;
-}
-
-/* Proje Ekle Bölümü Stilleri */
-
-/* SAVE ve CANCEL butonları */
-.save-btn, .cancel-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border: none;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.save-btn {
-  background-color: #3b82f6; /* mavi */
-  color: white;
-}
-
-.save-btn:hover {
-  background-color: #2563eb;
-  transform: scale(1.05);
-}
-
-.cancel-btn {
-  background-color: #e2e8f0; /* açık gri */
-  color: #334155;
-}
-
-.cancel-btn:hover {
-  background-color: #cbd5e1;
-  transform: scale(1.05);
-}
-.project-add-section {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  position: relative;
-}
-
-.project-add-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.project-add-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.pencil-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  background-color: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: all 0.2s ease;
-}
-
-.pencil-btn:hover {
-  background-color: #f3f4f6;
-  color: #374151;
-  transform: scale(1.05);
-}
-
-.ap-pencil-icon {
-  transition: all 0.2s ease;
-}
-
-/* Responsive tasarım */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .category-dropdown {
-    position: static;
-  }
-  
-  .dropdown-trigger {
-    min-width: 160px;
-    font-size: 13px;
-    padding: 8px 12px;
-  }
-  
-  .dropdown-menu {
-    position: fixed;
-    top: 64px;
-    left: 16px;
-    right: 16px;
-    width: auto;
-  }
-.project-add-section {
-    gap: 12px;
+  .custom-navbar {
+    padding: 0 16px;
+    height: 60px;
   }
 
-  .project-add-title {
+  .geo-title {
+    font-size: 18px;
+  }
+
+  .project-start-btn {
+    padding: 10px 18px;
     font-size: 14px;
   }
 
-  .action-button {
-    padding: 6px 10px;
-    font-size: 11px;
+  .dropdown-menu.filter-menu {
+    width: 260px;
+    right: 10px;
   }
 
-  .action-button svg {
-    width: 14px;
-    height: 14px;
+  .filter-trigger {
+    padding: 8px 12px;
+    font-size: 13px;
   }
 }
