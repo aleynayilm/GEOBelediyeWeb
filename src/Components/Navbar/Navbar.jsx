@@ -1,134 +1,91 @@
 import React, {useState} from 'react';
 import './Navbar.css';
-import { User, Menu, X, ChevronDown} from 'lucide-react';
-
-function PencilIcon({ size = 20 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-      className="ap-pencil-icon"
-    >
-      <path
-        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm2.92 2.33H5v-0.92L14.06 7.52l0.92 0.92L5.92 19.58ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
+import {
+    Menu,
+    X,
+    ChevronDown,
+    LayoutGrid,
+    Trash2,
+    MapPin,
+    Clock,
+    Calendar,
+    Settings,
+    LogOut
+} from 'lucide-react';
 
 const Navbar = ({isSidebarOpen, toggleSidebar}) => {
-  const [selectedCategory, setSelectedCategory] = useState('Atık Toplama Optimizasyonu');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
 
-  const categories = [
-    'Atık Toplama Optimizasyonu',
-    'Otopark Optimizasyonu',
-    'Sosyal Alan Optimizasyonu',
-    'Altyapı Optimizasyonu'
-  ];
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
+    const filterOptions = [
+        { id: 1, name: 'Tüm Projeler', icon: <LayoutGrid size={18} />, color: '#3b82f6' },
+        { id: 2, name: 'Atık Yönetimi', icon: <Trash2 size={18} />, color: '#10b981' },
+        { id: 3, name: 'Bölge Planlama', icon: <MapPin size={18} />, color: '#f59e0b' },
+        { id: 4, name: 'Zaman Çizelgesi', icon: <Clock size={18} />, color: '#8b5cf6' },
+        { id: 5, name: 'Takvim Görünümü', icon: <Calendar size={18} />, color: '#ec4899' }
+    ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-  };
+    return (
+        <header className="custom-navbar">
+            {/* Left Side - Hamburger and GEOBelediye */}
+            <div className="navbar-left">
+                <button
+                    onClick={toggleSidebar}
+                    className="sidebar-toggle-btn"
+                >
+                    {isSidebarOpen ? <X size={24}/> : <Menu size={24}/>}
+                </button>
+                <h1 className="geo-title">GEOBelediye</h1>
+            </div>
 
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
-  
-  return (
-    <header className="custom-navbar">
-      {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        className="sidebar-toggle-btn"
-        style={{
-          padding: '12px',
-          backgroundColor: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-      {/* App Title */}
-  <h1 className="app-title">AKILLI DAĞITIM VE PLANLAMA SİSTEMİ</h1>
+            {/* Center - Proje Başlat Button */}
+            <button className="project-start-btn">
+                Proje Başlat
+            </button>
 
-{/* Kategori Dropdown */}
-<div className="navbar-right"><div className="category-dropdown">
-        <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="dropdown-trigger"
-        >
-          <span>{selectedCategory}</span>
-          <ChevronDown className={`chevron-icon ${isDropdownOpen ? 'rotated' : ''}`} size={16} />
-        </button>
-        
-        {isDropdownOpen && (
-          <div className="dropdown-menu">
-            {categories.map((category, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setIsDropdownOpen(false);
-                }}
-                className={`dropdown-item ${selectedCategory === category ? 'active' : ''}`}
-              >
-                <div className={`category-dot ${selectedCategory === category ? 'active' : ''}`} />
-                <span>{category}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div></div>
-      
-      <div className="project-add-section">
-  <div className="project-add-header">
-    <span className="project-add-title">Proje Ekle</span>
-    {!isEditing ? (
-      <button
-      onClick={handleEdit}
-        className="pencil-btn"
-        title="Düzenle"
-      >
-        <PencilIcon size={18} />
-      </button>
-    ) : (
-      <div className="edit-buttons" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <button
-          onClick={handleSave}
-          className="save-btn"
-        >
-          SAVE
-        </button>
-        <button
-          onClick={handleCancel}
-          className="cancel-btn"
-        >
-          CANCEL
-        </button>
-      </div>
-    )}
-  </div>
-</div>
-      {/* <div className="navbar-right">
-        <div className="step-indicator">
-          <span className="step-label">{currentStepLabel}</span>
-        </div>
-      </div> */}
-    </header>
-  );
+            {/* Right Side - Filter Dropdown */}
+            <div className="navbar-right">
+                <div className="filter-dropdown">
+                    <button
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className={`filter-trigger ${isFilterOpen ? 'active' : ''}`}
+                    >
+                        <div className="filter-selected">
+                            {filterOptions.find(opt => opt.name === selectedFilter)?.icon}
+                            <span>{selectedFilter}</span>
+                        </div>
+                        <ChevronDown className={`chevron-icon ${isFilterOpen ? 'rotated' : ''}`} size={18}/>
+                    </button>
+
+                    {isFilterOpen && (
+                        <div className="dropdown-menu filter-menu">
+                            <div className="filter-header">
+                                <h4>Proje Teması Seçin</h4>
+                            </div>
+
+                            <div className="filter-options">
+                                {filterOptions.map((option) => (
+                                    <button
+                                        key={option.id}
+                                        className={`filter-option ${selectedFilter === option.name ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setSelectedFilter(option.name);
+                                            setIsFilterOpen(false);
+                                        }}
+                                    >
+                                        <div className="option-icon" style={{ color: option.color }}>
+                                            {option.icon}
+                                        </div>
+                                        <span>{option.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </header>
+    );
 };
 
 export default Navbar;
