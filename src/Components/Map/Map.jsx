@@ -17,7 +17,17 @@ import { getData as getLocations, addData, updateLocation, deleteLocation } from
 import { fromCircle } from 'ol/geom/Polygon';
 import { defaults as defaultControls } from 'ol/control';
 
-
+/**
+ * SimpleMap (refactored)
+ * ---------------------------------------------------------------
+ * → Sadece POLYGON ve POINT geometry tiplerini destekler.
+ * → Harita EPSG:3857 (WebMercator) projeksiyonunda çalışır,
+ *   however back‑end'e gönderilen/geçici olarak gösterilen WKT değerleri EPSG:4326
+ *   (coğrafi koordinatlar) formatında üretilir.
+ * → Backend'den gelen veriler hangi projeksiyonda olursa olsun (4326 veya 3857)
+ *   otomatik olarak algılanır ve dönüştürülür.
+ * ---------------------------------------------------------------
+ */
 
 const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     /* -------------------------- refs & singletons -------------------------- */
@@ -29,64 +39,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const overlayRef = useRef();
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
-
-    const addressInputRef = useRef();
-    const showConfirmation = (message) => {
-        return new Promise((resolve) => {
-            // You can replace this with a proper modal/dialog component
-            const shouldProceed = window.confirm(message); // For now, we'll keep using confirm
-            resolve(shouldProceed);
-        });
-    };
-    useImperativeHandle(ref, () => ({
-        focusOnFeature
-    }));
-    
-    const styleFunction = (feature) => {
-        const type = feature.getGeometry().getType();
-        const baseStyle = (() => {
-            if (type === 'Point') {
-                return new Style({
-                    image: new CircleStyle({
-                        radius: 6,
-                        fill: new Fill({ color: 'yellow' }),
-                        stroke: new Stroke({ color: 'black', width: 2 })
-                    })
-                });
-            } else if (type === 'LineString') {
-                return new Style({
-                    stroke: new Stroke({ color: 'Red', width: 3 })
-                });
-            } else if (type === 'Polygon') {
-                return new Style({
-                    stroke: new Stroke({ color: 'red', width: 2 }),
-                    fill: new Fill({ color: 'rgba(255, 0, 0, 0.1)' })
-                });
-            } else if (type === 'Circle') {
-                return new Style({
-                    image: new CircleStyle({
-                        radius: feature.getGeometry().getRadius(),
-                        fill: new Fill({ color: 'rgba(0, 0, 255, 0.2)' }),
-                        stroke: new Stroke({ color: 'blue', width: 2 })
-                    })
-                });
-            }
-        })();
-
-        const id = feature.getId();
-        if (id !== undefined) {
-            baseStyle.setText(new Text({
-                text: String(id),
-                font: 'bold 12px Arial',
-                fill: new Fill({ color: '#000' }),
-                stroke: new Stroke({ color: '#fff', width: 2 }),
-                offsetY: -15
-            }));
-        }
-
-        return baseStyle;
-    };
-
 
     /* ------------------------------ utilities ------------------------------ */
     const isLikelyEPSG3857 = (wktString) => {
