@@ -1,0 +1,281 @@
+.custom-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    z-index: 1001;
+  }
+  
+  .navbar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  
+  .step-indicator {
+    background-color: #f3f4f6;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #e5e7eb;
+    padding: 6px 12px;
+    border-radius: 9999px;
+  }
+  .username {
+    font-size: 13px;
+    color: #374151;
+  }
+  /* Kategori Dropdown Stilleri */
+.category-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 24px;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 10px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  min-width: 250px;
+  justify-content: space-between;
+}
+
+.dropdown-trigger:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.chevron-icon {
+  transition: transform 0.3s ease;
+  color: #64748b;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 1000;
+  animation: dropdownSlide 0.3s ease;
+}
+.app-title {
+  margin-left: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #1f2937;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #475569;
+  border-left: 4px solid transparent;
+}
+
+.dropdown-item:hover {
+  background-color: #f8fafc;
+  border-left-color: #3b82f6;
+  color: #1e40af;
+}
+
+.dropdown-item.active {
+  background-color: #eff6ff;
+  border-left-color: #3b82f6;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.category-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #cbd5e1;
+  transition: background-color 0.2s ease;
+}
+
+.category-dot.active {
+  background-color: #3b82f6;
+}
+
+.dropdown-item:hover .category-dot {
+  background-color: #60a5fa;
+}
+
+/* Proje Ekle Bölümü Stilleri */
+
+/* SAVE ve CANCEL butonları */
+.save-btn, .cancel-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.save-btn {
+  background-color: #3b82f6; /* mavi */
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.cancel-btn {
+  background-color: #e2e8f0; /* açık gri */
+  color: #334155;
+}
+
+.cancel-btn:hover {
+  background-color: #cbd5e1;
+  transform: scale(1.05);
+}
+.project-add-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.project-add-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-add-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pencil-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.pencil-btn:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+  transform: scale(1.05);
+}
+
+.ap-pencil-icon {
+  transition: all 0.2s ease;
+}
+
+/* Responsive tasarım */
+@media (max-width: 768px) {
+  .category-dropdown {
+    position: static;
+  }
+  
+  .dropdown-trigger {
+    min-width: 160px;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .dropdown-menu {
+    position: fixed;
+    top: 64px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+.project-add-section {
+    gap: 12px;
+  }
+
+  .project-add-title {
+    font-size: 14px;
+  }
+
+  .action-button {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .action-button svg {
+    width: 14px;
+    height: 14px;
+  }
+}

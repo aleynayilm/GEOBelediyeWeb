@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { Menu, X, Home, BarChart3, Settings, Users, FileText, Bell, Map } from 'lucide-react';
 import './SideBar.css';
 
-const SideBar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
 
   const menuItems = [
     { icon: Home, label: 'Ana Sayfa', href: '#' },
@@ -21,35 +16,8 @@ const SideBar = () => {
 
   return (
     <>
-      {/* Hamburger Menu Button */}
-      <button
-        onClick={toggleSidebar}
-        className="sidebar-toggle-btn"
-        style={{
-          position: 'fixed',
-          top: '20px',
-          left: '20px',
-          zIndex: 1000,
-          padding: '12px',
-          backgroundColor: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease'
-        }}
-      >
-        <div style={{ width: '24px', height: '24px' }}>
-          {isOpen ? (
-            <X size={24} color="#374151" />
-          ) : (
-            <Menu size={24} color="#374151" />
-          )}
-        </div>
-      </button>
-
       {/* Overlay */}
-      {isOpen && (
+      {isSidebarOpen && (
         <div
           className="sidebar-overlay"
           onClick={toggleSidebar}
@@ -68,7 +36,7 @@ const SideBar = () => {
 
       {/* Sidebar */}
       <div
-        className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}
+        className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}
         style={{
           position: 'fixed',
           top: 0,
@@ -78,7 +46,7 @@ const SideBar = () => {
           backgroundColor: 'white',
           boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
           zIndex: 999,
-          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.3s ease-in-out'
         }}
       >
@@ -87,7 +55,7 @@ const SideBar = () => {
           padding: '24px',
           borderBottom: '1px solid #e5e7eb'
         }}>
-          <div>
+          {/* <div>
             <h2 style={{
               paddingLeft: '70px',
               fontSize: '18px',
@@ -97,7 +65,7 @@ const SideBar = () => {
             }}>
               Analiz Portalı
             </h2>
-          </div>
+          </div> */}
         </div>
 
         {/* Navigation Menu */}

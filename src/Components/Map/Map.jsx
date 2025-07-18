@@ -43,7 +43,7 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     useImperativeHandle(ref, () => ({
         focusOnFeature
     }));
-
+    
     const styleFunction = (feature) => {
         const type = feature.getGeometry().getType();
         const baseStyle = (() => {
