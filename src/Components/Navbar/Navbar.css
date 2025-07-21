@@ -208,6 +208,95 @@
   }
 }
 
+.project-center-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.project-start-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.project-actions-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: fit-content;
+  display: flex;
+  gap: 12px;
+  z-index: 1002;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  animation: dropdownSlide 0.3s ease;
+  white-space: nowrap;
+}
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+@keyframes filterDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.project-actions-menu {
+  animation: dropdownSlide 0.3s ease;
+}
+
+.dropdown-menu.filter-menu {
+  animation: filterDropdownSlide 0.3s ease;
+}
+
+.action-btn {
+  cursor: pointer; /* Fare imlecini el şeklinde yapar */
+  background: none;
+  border: none;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background-color: #f0f0f0;
+  border-radius: 6px;
+}
+
+.action-btn.add {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.action-btn.save {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.action-btn.cancel {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .custom-navbar {

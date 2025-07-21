@@ -153,7 +153,7 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
 
         /* dropdown değişince yeni interaction ekle */
         typeSelectRef.current.onchange = addDrawInteraction;
-        addDrawInteraction();
+        // addDrawInteraction();
 
         /* ------------------------ modify interaction ------------------------ */
         const modify = new Modify({ source: vectorSource.current });
@@ -264,7 +264,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                     <option value="Polygon">Alan</option>
                 </select>
             </div>
-
             <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
             <div ref={popupContainerRef} className="ol-popup">
                 <div ref={popupContentRef} />
