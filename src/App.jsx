@@ -5,8 +5,8 @@ import SimpleMap from './Components/Map/Map';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from "./Components/Panel/Panel";
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
-import Navbar from './Components/Navbar/Navbar';
-
+import Navbar from './Components/Navbar/Navbar'
+import NameModal from './Components/Navbar/NameModal';
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
 import "../src/Css/PanelLoader.css";
@@ -19,6 +19,14 @@ export default function App() {
     const [panelVisible, setPanelVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+    const [polygonName, setPolygonName] = useState('');
+
+    const handlePolygonNameSave = (name) => {
+        setPolygonName(name);
+        setIsNameModalOpen(false);
+        console.log('Girilen Poligon İsmi:', name);
+    };
 
     const mapRef = useRef();
 
@@ -78,17 +86,23 @@ export default function App() {
                 onDataUpdated={handleDataUpdate}
             />
 
+<NameModal
+            isOpen={isNameModalOpen}
+            onClose={() => setIsNameModalOpen(false)}
+            onSave={handlePolygonNameSave}
+        />
+
             {/* Panel Açma Tuşu */}
-            {!showPanel && (
+            {/* {!showPanel && (
                 <button
                     type="button"
                     className="ap-open-trigger"
                     onClick={() => setShowPanel(true)}
-                    style={{ marginTop: '60px' }}
+                    style={{ marginTop: '660px' }}
                 >
                     Analiz Sonuçları
                 </button>
-            )}
+            )} */}
 
             {/* Overlay */}
             {showPanel && (

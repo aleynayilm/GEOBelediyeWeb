@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { Menu, X, Home, BarChart3, Settings, Users, FileText, Bell, Map } from 'lucide-react';
+import {Home, BarChart3, Settings, Wrench, FileText, Map } from 'lucide-react';
 import './SideBar.css';
 
 const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
 
   const menuItems = [
     { icon: Home, label: 'Ana Sayfa', href: '#' },
-    { icon: Map, label: 'Harita Görünümü', href: '#' },
+    { icon: Map, label: 'Projeler', href: '#' },
     { icon: BarChart3, label: 'Analiz Sonuçları', href: '#' },
     { icon: FileText, label: 'Raporlar', href: '#' },
-    { icon: Users, label: 'Kullanıcılar', href: '#' },
-    { icon: Bell, label: 'Bildirimler', href: '#' },
+    { icon: Wrench, label: 'Modifikasyonlar', href: '#' },
     { icon: Settings, label: 'Ayarlar', href: '#' }
   ];
 
@@ -50,23 +49,6 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
           transition: 'transform 0.3s ease-in-out'
         }}
       >
-        {/* Sidebar Header */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          {/* <div>
-            <h2 style={{
-              paddingLeft: '70px',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: 0
-            }}>
-              Analiz Portalı
-            </h2>
-          </div> */}
-        </div>
 
         {/* Navigation Menu */}
         <nav style={{ padding: '16px' }}>
@@ -74,6 +56,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
             listStyle: 'none',
             padding: 0,
             margin: 0,
+            marginTop: '64px',
             display: 'flex',
             flexDirection: 'column',
             gap: '8px'
