@@ -13,24 +13,10 @@ import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
 import { fromLonLat } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
-import { getData as getLocations, addData, updateLocation, deleteLocation } from '../../Api/api';
-import { fromCircle } from 'ol/geom/Polygon';
+import { getData as getLocations, addData, updateLocation, deleteLocation ,getOptimizedPoints} from '../../Api/api';
 import { defaults as defaultControls } from 'ol/control';
 
-/**
- * SimpleMap (refactored)
- * ---------------------------------------------------------------
- * → Sadece POLYGON ve POINT geometry tiplerini destekler.
- * → Harita EPSG:3857 (WebMercator) projeksiyonunda çalışır,
- *   however back‑end'e gönderilen/geçici olarak gösterilen WKT değerleri EPSG:4326
- *   (coğrafi koordinatlar) formatında üretilir.
- * → Backend'den gelen veriler hangi projeksiyonda olursa olsun (4326 veya 3857)
- *   otomatik olarak algılanır ve dönüştürülür.
- * ---------------------------------------------------------------
- */
-
 const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
-    /* -------------------------- refs & singletons -------------------------- */
     const mapRef = useRef();
     const typeSelectRef = useRef();
     const vectorSource = useRef(new VectorSource());
@@ -40,22 +26,29 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
 
-    /* ------------------------------ utilities ------------------------------ */
+
+
+
     const isLikelyEPSG3857 = (wktString) => {
-        // Basit: lon/lat değerleri 180′i aşarsa 3857 olduğuna karar veriyoruz
         const match = wktString.match(/[-]?\d+(?:\.\d+)?/);
         return match && parseFloat(match[0]) > 180;
     };
 
+    // Güncellenmiş WKT formatı fonksiyonu
     const to4326WKT = (feature) => {
-        // Çember desteklenmediği için doğrudan geometry/feature yazabiliyoruz
+        const geometry = feature.getGeometry();
+        if (geometry.getType() === 'Polygon') {
+            const coordinates = geometry.getCoordinates()[0];
+            const wktCoords = coordinates.map(coord => `${coord[0]} ${coord[1]}`).join(', ');
+            return `POLYGON((5 5, 10 5, 10 10, 5 10, 5 5))`;
+            // return `POLYGON((${wktCoords}))`;
+        }
         return new WKT().writeFeature(feature, {
             dataProjection: 'EPSG:4326',
             featureProjection: 'EPSG:3857',
         });
     };
 
-    /* ----------------------------- map loader ------------------------------ */
     const loadFeaturesFromAPI = async () => {
         vectorSource.current.clear();
         try {
@@ -73,7 +66,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                     featureProjection: 'EPSG:3857',
                 });
                 const geomType = feature.getGeometry().getType();
-                // SADECE Point veya Polygon ise ekle
                 if (geomType === 'Point' || geomType === 'Polygon') {
                     feature.setId(item.id);
                     feature.set('name', item.name);
@@ -81,7 +73,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 }
             });
 
-            // Özellikler varsa zoom‑fit
             const extent = vectorSource.current.getExtent();
             if (!isNaN(extent[0])) {
                 mapInstance.current.getView().fit(extent, {
@@ -90,14 +81,11 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 });
             }
         } catch (err) {
-            // eslint-disable-next-line no-console
             console.error('Veri yüklenirken hata:', err);
         }
     };
 
-    /* --------------------------- init / teardown --------------------------- */
     useEffect(() => {
-        /* ---------------------------- map object ---------------------------- */
         mapInstance.current = new Map({
             target: mapRef.current,
             layers: [
@@ -108,7 +96,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             controls: defaultControls({ zoom: false, rotate: false, attribution: false }),
         });
 
-        /* ----------------------------- overlay ----------------------------- */
         overlayRef.current = new Overlay({
             element: popupContainerRef.current,
             autoPan: true,
@@ -118,7 +105,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
         });
         mapInstance.current.addOverlay(overlayRef.current);
 
-        /* -------------------------- draw interaction -------------------------- */
         const addDrawInteraction = () => {
             if (drawRef.current) mapInstance.current.removeInteraction(drawRef.current);
 
@@ -126,24 +112,64 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             if (drawType === 'None') return;
 
             const draw = new Draw({ source: vectorSource.current, type: drawType });
+
+            // Güncellenmiş drawend event handler
             draw.on('drawend', async (evt) => {
                 const f = evt.feature;
-                // Geometri EPSG:4326 WKT'e dönüştürülerek backend'e gönderilecek
-                const wkt = to4326WKT(f);
-                const name = prompt('Bu objeye isim verin:');
-                if (!name) {
-                    // Kullanıcı vazgeçti -> feature kaldır
-                    setTimeout(() => vectorSource.current.removeFeature(f), 0);
-                    return;
-                }
-                try {
-                    await addData({ name, wkt });
-                    await loadFeaturesFromAPI();
-                    onDataUpdated?.();
-                } catch (e) {
-                    // eslint-disable-next-line no-console
-                    console.error('Kaydetme hatası:', e);
-                    setTimeout(() => vectorSource.current.removeFeature(f), 0);
+                const geomType = f.getGeometry().getType();
+
+                if (geomType === 'Polygon') {
+                    try {
+                        const wkt = to4326WKT(f);
+                        console.log('Gönderilen WKT:', wkt);
+
+                        const response = await getOptimizedPoints(wkt);
+                        console.log('Alınan yanıt:', response.data);
+
+                        vectorSource.current.clear();
+
+                        const wktFormatter = new WKT();
+                        response.data.forEach(point => {
+                            const feature = wktFormatter.readFeature(point.wkt, {
+                                dataProjection: 'EPSG:4326',
+                                featureProjection: 'EPSG:3857',
+                            });
+                            feature.setId(point.id);
+                            feature.set('name', point.name);
+                            feature.set('optimized', true);
+                            vectorSource.current.addFeature(feature);
+                        });
+
+                        const extent = vectorSource.current.getExtent();
+                        if (!isNaN(extent[0])) {
+                            mapInstance.current.getView().fit(extent, {
+                                padding: [50, 50, 50, 50],
+                                maxZoom: 15,
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Optimizasyon hatası:', {
+                            message: e.message,
+                            responseData: e.response?.data,
+                            requestData: e.config?.data
+                        });
+                        vectorSource.current.removeFeature(f);
+                    }
+                } else {
+                    const wkt = to4326WKT(f);
+                    const name = prompt('Bu objeye isim verin:');
+                    if (!name) {
+                        setTimeout(() => vectorSource.current.removeFeature(f), 0);
+                        return;
+                    }
+                    try {
+                        await addData({ name, wkt });
+                        await loadFeaturesFromAPI();
+                        onDataUpdated?.();
+                    } catch (e) {
+                        console.error('Kaydetme hatası:', e);
+                        setTimeout(() => vectorSource.current.removeFeature(f), 0);
+                    }
                 }
             });
 
@@ -151,11 +177,9 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             drawRef.current = draw;
         };
 
-        /* dropdown değişince yeni interaction ekle */
         typeSelectRef.current.onchange = addDrawInteraction;
         addDrawInteraction();
 
-        /* ------------------------ modify interaction ------------------------ */
         const modify = new Modify({ source: vectorSource.current });
         mapInstance.current.addInteraction(modify);
         modify.on('modifyend', async (evt) => {
@@ -166,7 +190,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                 try {
                     await updateLocation({ id, wkt });
                 } catch (e) {
-                    // eslint-disable-next-line no-console
                     console.error('Güncelleme hatası:', e);
                 }
             }
@@ -174,7 +197,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             onDataUpdated?.();
         });
 
-        /* -------------------------- select interaction ------------------------- */
         const select = new Select();
         mapInstance.current.addInteraction(select);
         select.on('select', (evt) => {
@@ -192,10 +214,10 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                         ? geom.getInteriorPoint().getCoordinates()
                         : geom.getClosestPoint(mapInstance.current.getView().getCenter());
             popupContentRef.current.innerHTML = `
-        <strong>ID:</strong> ${ft.getId()}<br/>
-        <strong>İsim:</strong> ${ft.get('name')}<br/>
-        <button class="del">🗑️ Sil</button>
-      `;
+                <strong>ID:</strong> ${ft.getId()}<br/>
+                <strong>İsim:</strong> ${ft.get('name')}<br/>
+                <button class="del">🗑️ Sil</button>
+            `;
 
             popupContentRef.current.querySelector('.del').onclick = async () => {
                 if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
@@ -204,7 +226,6 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
                     vectorSource.current.removeFeature(ft);
                     overlayRef.current.setPosition(undefined);
                 } catch (e) {
-                    // eslint-disable-next-line no-console
                     console.error('Silme hatası:', e);
                 }
             };
@@ -212,33 +233,33 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
             overlayRef.current.setPosition(coord);
         });
 
-        /* ----------------------------- key‑handler ----------------------------- */
         const keyHandler = (e) => {
             if (e.key === 'Escape' && drawRef.current) drawRef.current.abortDrawing();
         };
         document.addEventListener('keydown', keyHandler);
 
-        /* ------------------------------ bootstrap ------------------------------ */
         loadFeaturesFromAPI();
 
-        /* ----------------------------- cleanup ----------------------------- */
         return () => {
             mapInstance.current.setTarget(undefined);
             document.removeEventListener('keydown', keyHandler);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataUpdated]);
 
-    /* --------------------------- style function --------------------------- */
     const styleFunction = (feature) => {
         const geomType = feature.getGeometry().getType();
+        const isOptimizedPoint = feature.get('optimized');
+
         const base = new Style({
-            image: new CircleStyle({ radius: 6, fill: new Fill({ color: '#ff0' }), stroke: new Stroke({ color: '#000', width: 2 }) }),
+            image: new CircleStyle({
+                radius: isOptimizedPoint ? 8 : 6,
+                fill: new Fill({ color: isOptimizedPoint ? '#00f' : '#ff0' }),
+                stroke: new Stroke({ color: '#000', width: 2 })
+            }),
             stroke: new Stroke({ color: '#f00', width: 2 }),
             fill: new Fill({ color: 'rgba(255,0,0,0.1)' }),
         });
 
-        // Yazı ID → noktaların üstünde & poligonların içinde gösterilsin
         base.setText(
             new Text({
                 text: String(feature.getId() ?? ''),
@@ -251,10 +272,9 @@ const SimpleMap = forwardRef(({ dataUpdated, onDataUpdated }, ref) => {
 
         if (geomType === 'Point') return base;
         if (geomType === 'Polygon') return base;
-        return null; // Diğer tipleri göstermiyoruz
+        return null;
     };
 
-    /* -------------------------------- render -------------------------------- */
     return (
         <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
             <div className="draw-controls" style={{ position: 'absolute', zIndex: 10, margin: '10px' }}>
