@@ -14,7 +14,7 @@ import {
     Truck
 } from 'lucide-react';
 
-const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange }) => {
+const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel  }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
@@ -166,6 +166,7 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange }) => {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleModalSave}
+                    onOpenAnalysisPanel={onOpenAnalysisPanel} // Prop'u iletiyoruz
                 />
             </div>
         </>

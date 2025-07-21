@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import './NameModal.css';
 
-const NameModal = ({ isOpen, onClose, onSave }) => {
+const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel }) => {
   const [name, setName] = useState('');
 
-  const handleSave = () => {
+  const handleSaveAndOpenPanel = () => {
     if (name.trim()) {
       onSave(name.trim());
       setName('');
+      onOpenAnalysisPanel(); // Analiz panelini aç
     }
   };
 
@@ -27,8 +28,8 @@ const NameModal = ({ isOpen, onClose, onSave }) => {
             <button className="cancel-btn" onClick={onClose}>
               İptal
             </button>
-            <button className="save-btn" onClick={handleSave}>
-              Kaydet
+            <button className="save-btn" onClick={handleSaveAndOpenPanel}>
+              Kaydet ve Analiz Yap
             </button>
           </div>
         </div>

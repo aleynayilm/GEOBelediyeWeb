@@ -1,11 +1,10 @@
 // App.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/cizimpolygon';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from "./Components/Panel/Panel";
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
-import Navbar from './Components/Navbar/Navbar'
+import Navbar from './Components/Navbar/Navbar';
 import NameModal from './Components/Navbar/NameModal';
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
@@ -15,13 +14,11 @@ export default function App() {
     const [dataVersion, setDataVersion] = useState(0);
     const [showPanel, setShowPanel] = useState(false);
     const [panelReady, setPanelReady] = useState(false);
-    const [panelVisible, setPanelVisible] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isNameModalOpen, setIsNameModalOpen] = useState(false);
     const [polygonName, setPolygonName] = useState('');
-    const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler'); // Add this state
-    const [drawingMode, setDrawingMode] = useState(false); // Add this state
+    const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
+    const [drawingMode, setDrawingMode] = useState(false);
 
     const handlePolygonNameSave = (name) => {
         setPolygonName(name);
@@ -31,16 +28,15 @@ export default function App() {
 
     const mapRef = useRef();
 
-    // Add this handler for filter changes
     const handleFilterChange = (filterName) => {
         setSelectedFilter(filterName);
     };
 
-    // Add this handler for drawing mode changes
     const handleDrawingModeChange = (mode) => {
         setDrawingMode(mode);
     };
 
+    // ESC ile paneli kapat
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === "Escape") {
@@ -52,6 +48,7 @@ export default function App() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
+    // Panel açıldığında loader göster
     useEffect(() => {
         if (!showPanel) {
             setPanelReady(false);
@@ -62,7 +59,7 @@ export default function App() {
             setPanelReady(true);
         }, 9000);
         return () => clearTimeout(t);
-    }, [showPanel, panelVisible]);
+    }, [showPanel]);
 
     const handleDataUpdate = () => setDataVersion((p) => p + 1);
 
@@ -86,12 +83,18 @@ export default function App() {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
+    // Modal içindeki buton için panel açma fonksiyonu
+    const openAnalysisPanel = () => {
+        setShowPanel(true);
+    };
+
     return (
         <div className="app-map-wrapper">
             <Navbar
                 isSidebarOpen={isSidebarOpen}
                 toggleSidebar={toggleSidebar}
-                onFilterChange={handleFilterChange} // Pass the handler
+                onFilterChange={handleFilterChange}
+                onOpenAnalysisPanel={openAnalysisPanel} // Yeni prop
             />
             <SideBar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
             <SimpleMap
@@ -99,17 +102,17 @@ export default function App() {
                 refreshTrigger={dataVersion}
                 dataUpdated={dataVersion}
                 onDataUpdated={handleDataUpdate}
-                selectedFilter={selectedFilter} // Pass the selected filter
-                drawingMode={drawingMode} // Pass the drawing mode
-                onDrawingModeChange={handleDrawingModeChange} // Pass the handler
+                selectedFilter={selectedFilter}
+                drawingMode={drawingMode}
+                onDrawingModeChange={handleDrawingModeChange}
             />
 
             <NameModal
                 isOpen={isNameModalOpen}
                 onClose={() => setIsNameModalOpen(false)}
                 onSave={handlePolygonNameSave}
+                onOpenAnalysisPanel={openAnalysisPanel} // Bu prop eklendi
             />
-
             {showPanel && (
                 <div
                     className="ap-backdrop ap-backdrop-show"
