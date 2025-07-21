@@ -14,25 +14,25 @@ const NameModal = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <h3>Poligon İsmi</h3>
-        <input
-          type="text"
-          placeholder="Bir isim girin"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <div className="modal-actions">
-          <button className="cancel-btn" onClick={onClose}>
-            İptal
-          </button>
-          <button className="save-btn" onClick={handleSave}>
-            Kaydet
-          </button>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+          <h3>Poligon İsmi</h3>
+          <input
+              type="text"
+              placeholder="Bir isim girin"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+          />
+          <div className="modal-actions">
+            <button className="cancel-btn" onClick={onClose}>
+              İptal
+            </button>
+            <button className="save-btn" onClick={handleSave}>
+              Kaydet
+            </button>
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 
