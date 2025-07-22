@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { updateMinCoverCount } from '../../services/api.jsx';
 import "../../Css/AnalysisPanel.css";
 
 export function AnalysisPanel({
@@ -12,19 +13,59 @@ export function AnalysisPanel({
                                   className = "",
                               }) {
     const [entered, setEntered] = useState(false);
-
-
+    const [isEditing, setIsEditing] = useState(false);
+    const [tempCoverCount, setTempCoverCount] = useState(minCoverCount);
     useEffect(() => {
-        // allow next paint, then add enter class for transition
-        const id = requestAnimationFrame(() => setEntered(true));
-        return () => cancelAnimationFrame(id);
-    }, []);
+        setEntered(true);
+      }, []);
+
+      useEffect(() => {
+        setTempCoverCount(minCoverCount);
+      }, [minCoverCount]);
+    
+      const handleEditClick = () => {
+        setIsEditing(true);
+      };
+    
+      const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+          finishEditing();
+        }
+      };
+      const finishEditing = () => {
+        setIsEditing(false);
+        // onSave fonksiyonuna güncellenen kapak sayısını ve points gönder
+        onSave?.(Number(tempCoverCount), points);
+      };
+
+//   const handleClose = () => setIsModalOpen(false);
+//   const handleSave = async (newVal) => {
+//     const success = await updateMinCoverCount(newVal); // backend isteği
+//     if (success) {
+//       setCoverCount(newVal);
+//       setIsModalOpen(false);
+//     } else {
+//       alert("Bir hata oluştu.");
+//     }
+//   };
+
+
+    // useEffect(() => {
+    //     // allow next paint, then add enter class for transition
+    //     const id = requestAnimationFrame(() => setEntered(true));
+    //     return () => cancelAnimationFrame(id);
+    // }, []);
+
+    // Eğer minCoverCount prop değişirse coverCount da güncellenmeli
+//   useEffect(() => {
+//     setCoverCount(minCoverCount);
+//   }, [minCoverCount]);
 
     /* ---- Scroll logic: >6 satırda tablo scroll olsun ---- */
     const scrollRowsThreshold = 6;
     const shouldScroll = points.length > scrollRowsThreshold;
 
-    /* Tek tablo markup'ı; iki yerde kullanacağız */
+
     const tableMarkup = useMemo(() => (
         <table className="ap-table">
             <thead>
@@ -49,6 +90,13 @@ export function AnalysisPanel({
             </tbody>
         </table>
     ), [points]);
+    const handleSaveButtonClick = () => {
+        if (isEditing) {
+          finishEditing();
+        } else {
+          onSave?.(minCoverCount, points);
+        }
+      };
 
     return (
         <div
@@ -72,13 +120,29 @@ export function AnalysisPanel({
                 <div className="ap-metric-card ap-metric-orange">
                     <div className="ap-metric-body">
                         <span className="ap-metric-label">Önerilen Minimum Kapak Sayısı</span>
-                        <span className="ap-metric-value">{minCoverCount}</span>
+                        <span
+  className={`ap-metric-value ${isEditing ? "editing" : ""}`}
+>
+  {isEditing ? (
+    <input
+      type="number"
+      min="1"
+      className="ap-metric-input"
+      value={tempCoverCount}
+      onChange={(e) => setTempCoverCount(e.target.value)}
+      onKeyDown={handleKeyDown}
+      autoFocus
+    />
+  ) : (
+    tempCoverCount
+  )}
+</span>
                     </div>
                     <button
                         type="button"
                         className="ap-metric-edit"
                         aria-label="Minimum kapak sayısını düzenle"
-                        onClick={onEditMinCap}
+                        onClick={handleEditClick}
                     >
                         <PencilIcon />
                     </button>
@@ -108,7 +172,7 @@ export function AnalysisPanel({
                     <button
                         type="button"
                         className="ap-save-btn"
-                        onClick={() => onSave?.(points)}
+                        onClick={handleSaveButtonClick}
                     >
                         Kaydet
                     </button>

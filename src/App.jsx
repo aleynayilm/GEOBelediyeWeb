@@ -133,6 +133,28 @@ export default function App() {
                     setIsNameModalOpen(false);
                 }}
             />
+
+
+<NameModal
+            isOpen={isNameModalOpen}
+            onClose={() => setIsNameModalOpen(false)}
+            onSave={handlePolygonNameSave}
+        />
+
+            {/* Panel Açma Tuşu */}
+            {!showPanel && (
+                <button
+                    type="button"
+                    className="ap-open-trigger"
+                    onClick={() => setShowPanel(true)}
+                    style={{ marginTop: '660px' }}
+                >
+                    Analiz Sonuçları
+                </button>
+            )}
+
+            {/* Overlay */}
+
             {showPanel && (
                 <div
                     className="ap-backdrop ap-backdrop-show"

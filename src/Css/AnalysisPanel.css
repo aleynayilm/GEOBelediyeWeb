@@ -32,8 +32,7 @@
 
 /* Root panel container */
 .ap-root {
-
-    /* Paneli viewport’a göre sınırla; içerik taşarsa panel içinde scroll */
+    /* Paneli viewport'a göre sınırla; içerik taşarsa panel içinde scroll */
     max-height: calc(92vh - 0px); /* isteğe göre 95vh / 90vh yapabilirsin */
     overflow-y: auto;
     position: relative;
@@ -117,27 +116,75 @@
     align-items: center;
     min-height: 80px;
     box-shadow: 0 4px 16px rgba(0,0,0,.04);
-
 }
+
 .ap-metric-body {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: var(--ap-space-sm);
+    min-height: 80px; /* Sabit yükseklik (değere göre ayarlayın) */
+    justify-content: center; /* Dikeyde ortala */
 }
+
 .ap-metric-label {
     font-size: 1rem;
     font-weight: 600;
     opacity: 0.95;
 }
+
+/* Value container - input ve value için ortak container */
+.ap-metric-value-container {
+    position: relative;
+    display: inline-block;
+    min-height: calc(var(--ap-font-metric-value) * 1.1); /* Sabit yükseklik */
+    line-height: 1;
+}
+
+/* Metric value - normal görünüm */
 .ap-metric-value {
     font-size: var(--ap-font-metric-value);
     font-weight: 700;
-    line-height: 1;
+    line-height: 1; /* Satır yüksekliğini sıfırla */
+    display: inline-block; /* Input ile aynı davranış */
+    padding: 0;
+    margin: 0;
+    vertical-align: top; /* Hizalamayı düzelt */
+    white-space: nowrap; /* Metin tek satırda kalsın */
 }
+
+/* Düzenleme modundayken */
+.ap-metric-value.editing {
+    border-bottom-color: var(--ap-color-card-orange-grad);
+    cursor: text;
+}
+
+/* Input alanı - kayma önleme düzenlemeleri */
+.ap-metric-input {
+    font-size: var(--ap-font-metric-value) !important; /* Metinle aynı boyut */
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-bottom: 1px solid var(--ap-color-card-orange-grad);
+    outline: none;
+    width: 100%;
+    background: transparent;
+    font-family: inherit;
+    vertical-align: top; /* Aynı hizalamayı koru */
+}
+
+/* Spinner okları kaldır */
+.ap-metric-input::-webkit-outer-spin-button,
+.ap-metric-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .ap-metric-unit {
     font-size: 1.25rem;
     font-weight: 500;
+    margin-left: 8px; /* Unit ile value arasında boşluk */
 }
 
 /* Orange metric */
@@ -153,7 +200,12 @@
     box-shadow: 0 4px 16px rgba(255,140,0,.35);
 }
 
-/* White stripe Pencil edit (DOKUNMADIĞIM BLOK) */
+/* Orange metric için input rengi */
+.ap-metric-orange .ap-metric-input {
+    color: #fff;
+}
+
+/* White stripe Pencil edit */
 .ap-metric-edit {
     position: absolute;
     top: 0;
@@ -180,6 +232,11 @@
     color: var(--ap-color-card-blue-text);
     border: 1px solid rgba(41,98,255,.25);
     box-shadow: 0 2px 8px rgba(41,98,255,.08);
+}
+
+/* Blue metric için input rengi */
+.ap-metric-blue .ap-metric-input {
+    color: var(--ap-color-card-blue-text);
 }
 
 /* Table */
@@ -239,45 +296,36 @@
     .ap-metric-value {
         font-size: 2.75rem;
     }
+    .ap-metric-input {
+        font-size: 2.75rem;
+    }
 }
 @media (max-width: 600px) {
     .ap-root {
-        min-height: auto;   /* doğal yükseklik */
+        min-height: auto;
     }
 }
+
 /* === TABLO SATIR SAYISI >6 OLDUĞUNDA SCROLL === */
-/* Varsayılan maksimum scroll yüksekliği; gerekirse değiştir. */
 :root {
-    --ap-table-scroll-max: 300px; /* ~6 satır üstü için uygun; ekranına göre ayarla */
+    --ap-table-scroll-max: 300px;
 }
 
-/* Scroll kapsayıcısı: sadece tabloyu sarar, Kaydet butonu sabit kalır */
 .ap-table-scroll {
     max-height: var(--ap-table-scroll-max);
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* Scroll içindeki tablo başlığı görünür kalsın (sticky opsiyonel) */
-/* Başlık sabit kalsın istiyorsan yorum satırını kaldır: */
-/*
-.ap-table-scroll .ap-table thead th {
-  position: sticky;
-  top: 0;
-  background: var(--ap-color-bg);
-  z-index: 1;
-}
-*/
-
-/* Küçük ekranlarda (mobil) scroll yüksekliğini biraz kısalt */
+/* Küçük ekranlarda scroll yüksekliğini kısalt */
 @media (max-width: 600px) {
     :root {
         --ap-table-scroll-max: 220px;
     }
 }
+
 .ap-showy.ap-enter {
     opacity: 0;
-    /* derinden gelsin */
     transform:
             perspective(1200px)
             translateY(80px)
@@ -294,14 +342,12 @@
             scale(1)
             rotateX(0deg);
     filter: blur(0);
-    /* süreleri biraz daha “sahne” hissi için uzattık */
     transition:
             opacity .55s ease,
             transform .65s cubic-bezier(.16,1.05,.3,1),
             filter .45s ease;
 }
 
-/* Hafif “pop” overshoot (isteğe bağlı) */
 .ap-showy.ap-entered {
     will-change: transform;
 }

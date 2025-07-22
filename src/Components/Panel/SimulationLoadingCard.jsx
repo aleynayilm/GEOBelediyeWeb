@@ -1,4 +1,3 @@
-// Components/Panel/SimulationLoadingCard.jsx
 import React, { useEffect, useState } from "react";
 
 export default function SimulationLoadingCard() {
