@@ -86,7 +86,7 @@ const SimpleMap = React.forwardRef(
                 const validPoints = response.data
                     .map((point, index) => ({
                         ...point,
-                        id: point.id || `temp-opt-${index}`, // Assign unique temp ID if none provided
+                        id: point.id || `temp-opt-${index}`, // Assign temp ID for frontend use
                         name: point.name || `Optimized Bin-${index + 1}`, // Ensure unique names
                     }))
                     .filter((point) => {
@@ -97,7 +97,25 @@ const SimpleMap = React.forwardRef(
                         return true;
                     });
 
-                validPoints.forEach((point, index) => {
+                // Filter out duplicate coordinates
+                const uniquePoints = [];
+                const seenCoordinates = new Set();
+                validPoints.forEach((point) => {
+                    const wktMatch = point.wkt.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
+                    if (wktMatch) {
+                        const coordKey = `${wktMatch[1]},${wktMatch[2]}`;
+                        if (!seenCoordinates.has(coordKey)) {
+                            seenCoordinates.add(coordKey);
+                            uniquePoints.push(point);
+                        } else {
+                            console.warn(`Duplicate coordinates found for point: ${point.name}, WKT: ${point.wkt}`);
+                        }
+                    } else {
+                        console.warn(`Invalid WKT format for point: ${point.wkt}`);
+                    }
+                });
+
+                uniquePoints.forEach((point, index) => {
                     const feature = wktFormatter.readFeature(point.wkt, {
                         dataProjection: 'EPSG:4326',
                         featureProjection: 'EPSG:3857',
@@ -115,7 +133,7 @@ const SimpleMap = React.forwardRef(
                     });
                 }
 
-                return validPoints;
+                return uniquePoints;
             } catch (e) {
                 console.error('Optimization error:', e);
                 return null;
@@ -129,19 +147,53 @@ const SimpleMap = React.forwardRef(
             }
 
             try {
-                const data = points.map((point, index) => ({
-                    id: point.id && point.id !== '0' ? point.id : `temp-${index}`, // Ensure unique IDs
-                    name: point.name || `Nokta-${index + 1}`,
-                    wkt: point.wkt,
-                }));
-                console.log('Sending to AddRange:', data);
-                const response = await addRange(data);
+                // Validate and format points, omitting Id for new records
+                const data = points
+                    .map((point, index) => {
+                        const wktMatch = point.wkt?.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
+                        if (!wktMatch) {
+                            console.warn(`Invalid WKT for point ${index}: ${point.wkt}`);
+                            return null;
+                        }
+                        // Normalize coordinates to 6 decimal places
+                        const lon = Number(wktMatch[1]).toFixed(6);
+                        const lat = Number(wktMatch[2]).toFixed(6);
+                        return {
+                            Name: point.name || `Nokta-${index + 1}`,
+                            Wkt: `POINT(${lon} ${lat})`,
+                        };
+                    })
+                    .filter(Boolean); // Remove invalid points
+
+                // Filter out duplicate coordinates
+                const uniquePoints = [];
+                const seenCoordinates = new Set();
+                data.forEach((point) => {
+                    const coordKey = point.Wkt;
+                    if (!seenCoordinates.has(coordKey)) {
+                        seenCoordinates.add(coordKey);
+                        uniquePoints.push(point);
+                    } else {
+                        console.warn(`Duplicate coordinates found for point: ${point.Name}, WKT: ${point.Wkt}`);
+                    }
+                });
+
+                if (uniquePoints.length === 0) {
+                    console.error('No valid unique points to save');
+                    throw new Error('No valid unique points to save');
+                }
+
+                console.log('Sending to AddRange:', uniquePoints);
+                const response = await addRange(uniquePoints);
                 console.log('AddRange response:', response.data);
                 await loadFeaturesFromAPI();
                 onDataUpdated?.();
                 return response.data;
             } catch (e) {
                 console.error('Error saving points:', e);
+                if (e.response) {
+                    console.error('Backend error response:', e.response.data);
+                }
                 throw e;
             }
         };
