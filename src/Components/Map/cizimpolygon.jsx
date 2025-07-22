@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef, useCallback, useState, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, forwardRef } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -23,19 +23,16 @@ const SimpleMap = forwardRef(({
                                   selectedFilter,
                                   drawingMode,
                                   onDrawingModeChange,
-                                  onOptimizationComplete,
-                                  onSavePolygonWithName
+                                  onOptimizationComplete // Added missing prop
                               }, ref) => {
     const mapRef = useRef();
     const typeSelectRef = useRef();
     const vectorSource = useRef(new VectorSource());
-    const vectorLayer = useRef(null);
     const mapInstance = useRef(null);
     const drawRef = useRef(null);
     const overlayRef = useRef();
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
-    const tempPolygonRef = useRef(null);
 
     const customIconUrls = {
         'Atık Yönetimi': '/icons/Trash/recycling-bin.png',
@@ -44,74 +41,6 @@ const SimpleMap = forwardRef(({
         'Otopark Planlama': '/icons/Parking-Lot/car.png',
         'Tüm Projeler': '/icons/default.svg'
     };
-
-    const savePolygon = async (name) => {
-        if (!tempPolygonRef.current) {
-            console.error('Kaydedilecek polygon bulunamadı');
-            return false;
-        }
-
-        try {
-            const wkt = to4326WKT(tempPolygonRef.current);
-            console.log('Saving Polygon WKT:', wkt);
-
-            await addData({ name, wkt });
-            console.log('Polygon saved successfully');
-
-            const optimizedPoints = await optimizePolygon();
-            if (optimizedPoints) {
-                console.log('Optimized points received:', optimizedPoints);
-                onOptimizationComplete?.(optimizedPoints);
-            }
-
-            return true;
-        } catch (e) {
-            console.error('Polygon save or optimization error:', e);
-            throw e;
-        }
-    };
-
-    const optimizePolygon = async () => {
-        if (!tempPolygonRef.current) {
-            console.error('Optimize edilecek polygon bulunamadı');
-            return null;
-        }
-
-        try {
-            const wkt = to4326WKT(tempPolygonRef.current);
-            console.log('Optimizing Polygon WKT:', wkt);
-            const response = await getOptimizedPoints(wkt);
-            console.log('Optimization response:', response);
-
-            const wktFormatter = new WKT();
-            response.data.forEach((point) => {
-                const feature = wktFormatter.readFeature(point.wkt, {
-                    dataProjection: 'EPSG:4326',
-                    featureProjection: 'EPSG:3857',
-                });
-                feature.set('name', point.name || `Nokta-${Math.random().toString(36).substr(2, 5)}`);
-                vectorSource.current.addFeature(feature);
-            });
-
-            const extent = vectorSource.current.getExtent();
-            if (!isNaN(extent[0])) {
-                mapInstance.current.getView().fit(extent, {
-                    padding: [50, 50, 50, 50],
-                    maxZoom: 15,
-                });
-            }
-
-            return response.data;
-        } catch (e) {
-            console.error('Optimization error:', e);
-            throw e;
-        }
-    };
-
-    useImperativeHandle(ref, () => ({
-        savePolygon,
-        optimizePolygon
-    }));
 
     const isLikelyEPSG3857 = (wktString) => {
         const match = wktString.match(/[-]?\d+(?:\.\d+)?/);
@@ -123,61 +52,13 @@ const SimpleMap = forwardRef(({
         if (geometry.getType() === 'Polygon') {
             const coordinates = geometry.getCoordinates()[0];
             const wktCoords = coordinates.map(coord => `${coord[0]} ${coord[1]}`).join(', ');
-            return `POLYGON((${wktCoords}))`;
+             return `POLYGON((${wktCoords}))`;
         }
         return new WKT().writeFeature(feature, {
             dataProjection: 'EPSG:4326',
             featureProjection: 'EPSG:3857',
         });
     };
-
-    const styleFunction = useCallback((feature) => {
-        const geomType = feature.getGeometry().getType();
-        const theme = selectedFilter;
-        const iconUrl = customIconUrls[theme] || customIconUrls['Tüm Projeler'];
-
-        const themeColors = {
-            'Atık Yönetimi': '#10b981',
-            'Bölge Planlama': '#f59e0b',
-            'Altyapı Yönetimi': '#ec4899',
-            'Otopark Planlama': '#8b5cf6',
-            'Tüm Projeler': '#888'
-        };
-        const color = themeColors[theme] || '#888';
-
-        if (geomType === 'Point') {
-            return new Style({
-                image: new Icon({
-                    src: iconUrl,
-                    scale: 0.06,
-                    anchor: [0.5, 0.9],
-                }),
-                text: new Text({
-                    text: feature.get('name') || '',
-                    font: 'bold 12px Arial',
-                    fill: new Fill({ color: '#000' }),
-                    stroke: new Stroke({ color: '#fff', width: 2 }),
-                    offsetY: -20,
-                }),
-            });
-        }
-
-        if (geomType === 'Polygon') {
-            return new Style({
-                stroke: new Stroke({ color, width: 2 }),
-                fill: new Fill({ color: `${color}33` }),
-                text: new Text({
-                    text: feature.get('name') || '',
-                    font: 'bold 12px Arial',
-                    fill: new Fill({ color: '#000' }),
-                    stroke: new Stroke({ color: '#fff', width: 2 }),
-                    offsetY: -15,
-                }),
-            });
-        }
-
-        return null;
-    }, [selectedFilter]);
 
     const loadFeaturesFromAPI = async () => {
         vectorSource.current.clear();
@@ -224,7 +105,7 @@ const SimpleMap = forwardRef(({
         const draw = new Draw({
             source: vectorSource.current,
             type: drawType,
-            freehand: false
+            freehand: false // Enable freehand drawing for better UX
         });
 
         draw.on('drawend', async (evt) => {
@@ -232,9 +113,46 @@ const SimpleMap = forwardRef(({
             const geomType = f.getGeometry().getType();
 
             if (geomType === 'Polygon') {
-                tempPolygonRef.current = f;
-                if (onDrawingModeChange) {
-                    onDrawingModeChange(false);
+                try {
+                    const wkt = to4326WKT(f);
+                    console.log('Gönderilen WKT:', wkt);
+
+                    const response = await getOptimizedPoints(wkt);
+                    console.log('Alınan yanıt:', response.data);
+
+                    // Call the optimization complete callback
+                    if (onOptimizationComplete) {
+                        onOptimizationComplete(response.data);
+                    }
+
+                    vectorSource.current.clear();
+
+                    const wktFormatter = new WKT();
+                    response.data.forEach(point => {
+                        const feature = wktFormatter.readFeature(point.wkt, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857',
+                        });
+                        feature.setId(point.id);
+                        feature.set('name', point.name);
+                        feature.set('optimized', true);
+                        vectorSource.current.addFeature(feature);
+                    });
+
+                    const extent = vectorSource.current.getExtent();
+                    if (!isNaN(extent[0])) {
+                        mapInstance.current.getView().fit(extent, {
+                            padding: [50, 50, 50, 50],
+                            maxZoom: 15,
+                        });
+                    }
+                } catch (e) {
+                    console.error('Optimizasyon hatası:', {
+                        message: e.message,
+                        responseData: e.response?.data,
+                        requestData: e.config?.data
+                    });
+                    vectorSource.current.removeFeature(f);
                 }
             } else {
                 const wkt = to4326WKT(f);
@@ -258,17 +176,63 @@ const SimpleMap = forwardRef(({
         drawRef.current = draw;
     };
 
-    useEffect(() => {
-        vectorLayer.current = new VectorLayer({
-            source: vectorSource.current,
-            style: styleFunction
-        });
+    const styleFunction = (feature) => {
+        const geomType = feature.getGeometry().getType();
+        const theme = selectedFilter;
+        const iconUrl = customIconUrls[theme] || customIconUrls['Tüm Projeler'];
 
+        const themeColors = {
+            'Atık Yönetimi': '#10b981',
+            'Bölge Planlama': '#f59e0b',
+            'Altyapı Yönetimi': '#ec4899',
+            'Otopark Planlama': '#8b5cf6',
+            'Tüm Projeler': '#888'
+        };
+        const color = themeColors[theme] || '#888';
+
+        if (geomType === 'Point') {
+            return new Style({
+                image: new Icon({
+                    src: iconUrl,
+                    scale: 0.06,
+                    anchor: [0.5, 0.9],
+                }),
+                text: new Text({
+                    text: feature.get('name') || '',
+                    font: 'bold 12px Arial',
+                    fill: new Fill({ color: '#000' }),
+                    stroke: new Stroke({ color: '#fff', width: 2 }),
+                    offsetY: -20,
+                }),
+            });
+        }
+
+        if (geomType === 'Polygon') {
+            return new Style({
+                stroke: new Stroke({ color, width: 2 }),
+                fill: new Fill({ color: `${color}33` }),
+                text: new Text({
+                    text: feature.get('name') || '',
+                    font: 'bold 12px Arial',
+                    fill: new Fill({ color: '#000' }),
+                    stroke: new Stroke({ color: '#fff', width: 2 }),
+                    offsetY: -15,
+                }),
+            });
+        }
+
+        return null;
+    };
+
+    useEffect(() => {
         mapInstance.current = new Map({
             target: mapRef.current,
             layers: [
                 new TileLayer({ source: new OSM() }),
-                vectorLayer.current
+                new VectorLayer({
+                    source: vectorSource.current,
+                    style: styleFunction
+                }),
             ],
             view: new View({
                 center: fromLonLat([34, 39]),
@@ -374,10 +338,14 @@ const SimpleMap = forwardRef(({
     }, [drawingMode]);
 
     useEffect(() => {
-        if (vectorLayer.current) {
-            vectorLayer.current.setStyle(styleFunction);
+        if (mapInstance.current) {
+            mapInstance.current.getLayers().forEach((layer) => {
+                if (layer instanceof VectorLayer) {
+                    layer.setStyle(styleFunction);
+                }
+            });
         }
-    }, [selectedFilter, styleFunction]);
+    }, [selectedFilter]);
 
     return (
         <div style={{ width: '100%', height: '100vh', position: 'relative' }}>

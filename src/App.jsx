@@ -1,35 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/Map';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from "./Components/Panel/Panel";
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
-import Navbar from './Components/Navbar/Navbar'
+import Navbar from './Components/Navbar/Navbar';
 import NameModal from './Components/Navbar/NameModal';
 import "../src/Css/AnalysisPanel.css";
 import "../src/Css/PanelOverlay.css";
 import "../src/Css/PanelLoader.css";
 
-
 export default function App() {
     const [dataVersion, setDataVersion] = useState(0);
-    const [showPanel, setShowPanel] = useState(false);   // açılışta kapalı
-    const [panelReady, setPanelReady] = useState(false); // loader -> panel
-    const [panelVisible, setPanelVisible] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [showPanel, setShowPanel] = useState(false);
+    const [panelReady, setPanelReady] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isNameModalOpen, setIsNameModalOpen] = useState(false);
     const [polygonName, setPolygonName] = useState('');
-
-    const handlePolygonNameSave = (name) => {
-        setPolygonName(name);
-        setIsNameModalOpen(false);
-        console.log('Girilen Poligon İsmi:', name);
-    };
+    const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
+    const [drawingMode, setDrawingMode] = useState(false);
 
     const mapRef = useRef();
 
-    /* ESC ile kapat */
+    const handleSavePolygon = async (name) => {
+        if (!mapRef.current) {
+            console.error('Map referansı bulunamadı');
+            return false;
+        }
+
+        try {
+            const saveSuccess = await mapRef.current.savePolygon(name);
+            if (!saveSuccess) {
+                console.error('Polygon save failed');
+                return false;
+            }
+
+            setPolygonName(name);
+            return true;
+        } catch (error) {
+            console.error('Kaydetme hatası:', error);
+            return false;
+        }
+    };
+
+    const handleFilterChange = (filterName) => {
+        setSelectedFilter(filterName);
+    };
+
+    const handleDrawingModeChange = (mode) => {
+        setDrawingMode(mode);
+    };
+
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === "Escape") {
@@ -41,7 +61,6 @@ export default function App() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    /* Panel açıldığında loader*/
     useEffect(() => {
         if (!showPanel) {
             setPanelReady(false);
@@ -52,7 +71,7 @@ export default function App() {
             setPanelReady(true);
         }, 9000);
         return () => clearTimeout(t);
-    }, [showPanel,panelVisible]);
+    }, [showPanel]);
 
     const handleDataUpdate = () => setDataVersion((p) => p + 1);
 
@@ -71,19 +90,50 @@ export default function App() {
         setShowPanel(false);
         setPanelReady(false);
     };
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
+
+    const openAnalysisPanel = () => {
+        setShowPanel(true);
+    };
+
     return (
         <div className="app-map-wrapper">
-            <Navbar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
+            <Navbar
+                isSidebarOpen={isSidebarOpen}
+                toggleSidebar={toggleSidebar}
+                onFilterChange={handleFilterChange}
+                onOpenAnalysisPanel={openAnalysisPanel}
+                onStartDrawing={() => setDrawingMode(true)}
+                onStopDrawing={() => setDrawingMode(false)}
+                onSavePolygonWithName={handleSavePolygon}
+            />
             <SideBar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
             <SimpleMap
                 ref={mapRef}
                 refreshTrigger={dataVersion}
                 dataUpdated={dataVersion}
+                onOptimizationComplete={(points) => {
+                    console.log('Optimizasyon tamamlandı:', points);
+                }}
                 onDataUpdated={handleDataUpdate}
+                selectedFilter={selectedFilter}
+                drawingMode={drawingMode}
+                onDrawingModeChange={handleDrawingModeChange}
+                onSavePolygonWithName={handleSavePolygon}
             />
+            <NameModal
+                isOpen={isNameModalOpen}
+                onClose={() => setIsNameModalOpen(false)}
+                onSave={handleSavePolygon}
+                onOpenAnalysisPanel={() => {
+                    setShowPanel(true);
+                    setIsNameModalOpen(false);
+                }}
+            />
+
 
 <NameModal
             isOpen={isNameModalOpen}
@@ -104,17 +154,18 @@ export default function App() {
             )}
 
             {/* Overlay */}
+
             {showPanel && (
                 <div
                     className="ap-backdrop ap-backdrop-show"
-                    onClick={closePanel}      // backdrop'ta kapat
+                    onClick={closePanel}
                 >
                     <div
                         className="ap-backdrop-stop"
-                        onClick={(e) => e.stopPropagation()}  // panel içi tık backdrop'a geçmesin
+                        onClick={(e) => e.stopPropagation()}
                     >
                         {!panelReady ? (
-                            <SimulationLoadingCard  />   // 6s loader
+                            <SimulationLoadingCard />
                         ) : (
                             <AnalysisPanel
                                 minCoverCount={16}
@@ -133,4 +184,3 @@ export default function App() {
         </div>
     );
 }
-

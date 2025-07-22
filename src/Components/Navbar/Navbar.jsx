@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import NameModal from './NameModal';
 import './Navbar.css';
 import {
@@ -14,61 +14,53 @@ import {
     Truck
 } from 'lucide-react';
 
-const Navbar = ({isSidebarOpen, toggleSidebar}) => {
+const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing, onSavePolygonWithName }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [actionStatus, setActionStatus] = useState(null); // '1' ya da '0'
+    const [actionStatus, setActionStatus] = useState(null);
 
-    //ProjectMenu
-    const handleAddButton = () => {
-      setActionStatus('1');
-      // Menü açık kalacak
-    };
-    
-    const handleCancelButton = () => {
-      setActionStatus('1');
-      // Menü açık kalacak
-    };
-    
-    const handleSaveButton = () => {
-      setActionStatus('0');
-      setIsProjectMenuOpen(false);
-      handleSaveClick();  // Menü kapansın
-    };
-
-
-    //NameModal
-    const handleSaveClick = () => {
-        setIsModalOpen(true);
-      };
-    
-      const handleModalSave = (name) => {
-        console.log("Kaydedilen isim:", name);
-        // Burada polygon verisiyle birlikte backend'e gönderme işlemi yapılabilir
-        setIsModalOpen(false);
-      };
-
-    // Refs for outside click
-  const projectMenuRef = useRef(null);
-  const filterMenuRef = useRef(null);
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      // Proje menüsü dışına tıklama
-      if (isProjectMenuOpen && projectMenuRef.current && !projectMenuRef.current.contains(e.target)) {
-        setIsProjectMenuOpen(false);
-      } 
-
-      // Filtre menüsü dışına tıklama
-      if (isFilterOpen && filterMenuRef.current && !filterMenuRef.current.contains(e.target)) {
+    const handleFilterChange = (name) => {
+        setSelectedFilter(name);
         setIsFilterOpen(false);
-      }
+        onFilterChange?.(name);
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isProjectMenuOpen, isFilterOpen]);
+    const handleAddButton = () => {
+        setActionStatus('1');
+        setIsProjectMenuOpen(false);
+        onStartDrawing?.();
+    };
+
+    const handleCancelButton = () => {
+        setActionStatus('0');
+        setIsProjectMenuOpen(false);
+        onStopDrawing?.();
+    };
+
+    const handleSaveButton = () => {
+        setActionStatus('0');
+        setIsProjectMenuOpen(false);
+        onStopDrawing?.();
+        setIsModalOpen(true);
+    };
+
+    const projectMenuRef = useRef(null);
+    const filterMenuRef = useRef(null);
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (isProjectMenuOpen && projectMenuRef.current && !projectMenuRef.current.contains(e.target)) {
+                setIsProjectMenuOpen(false);
+            }
+            if (isFilterOpen && filterMenuRef.current && !filterMenuRef.current.contains(e.target)) {
+                setIsFilterOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProjectMenuOpen, isFilterOpen]);
 
     const filterOptions = [
         { id: 1, name: 'Tüm Projeler', icon: <LayoutGrid size={18} />, color: '#3b82f6' },
@@ -79,97 +71,84 @@ const Navbar = ({isSidebarOpen, toggleSidebar}) => {
     ];
 
     return (
-      <>
-        <div className="custom-navbar">
-          {/* Left Side - Hamburger and GEOBelediye */}
-          <div className="navbar-left">
-            <button onClick={toggleSidebar} className="sidebar-toggle-btn">
-              {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <h1 className="geo-title">GEOBelediye</h1>
-          </div>
-    
-          {/* Project Start Section */}
-          <div className="project-start-wrapper">
-            <button
-              className={`project-start-btn ${isProjectMenuOpen ? 'active' : ''}`}
-              onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
-            >
-              Proje Başlat
-            </button>
-    
-            {isProjectMenuOpen && (
-  <div className="project-actions-menu" ref={projectMenuRef}>
-    <button className="action-btn add" title="Polygon Ekle" onClick={handleAddButton}>
-      <PenTool size={20} />
-    </button>
-    <button className="action-btn save" title="Kaydet" onClick={handleSaveButton}>
-      <Save size={20} />
-    </button>
-    <button className="action-btn cancel" title="İptal" onClick={handleCancelButton}>
-      <X size={20} />
-    </button>
-  </div>
-)}
-          </div>
-    
-          {/* Right Side - Filter Dropdown */}
-          <div className="navbar-right">
-            <div className="filter-dropdown">
-              <button
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`filter-trigger ${isFilterOpen ? 'active' : ''}`}
-              >
-                <div className="filter-selected">
-                  {filterOptions.find((opt) => opt.name === selectedFilter)?.icon}
-                  <span>{selectedFilter}</span>
+        <>
+            <div className="custom-navbar">
+                <div className="navbar-left">
+                    <button onClick={toggleSidebar} className="sidebar-toggle-btn">
+                        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                    <h1 className="geo-title">GEOBelediye</h1>
                 </div>
-                <ChevronDown
-                  className={`chevron-icon ${isFilterOpen ? 'rotated' : ''}`}
-                  size={18}
-                />
-              </button>
-    
-              {isFilterOpen && (
-                <div className="dropdown-menu filter-menu" ref={filterMenuRef}>
-                  <div className="filter-header">
-                    <h4>Proje Teması Seçin</h4>
-                  </div>
-    
-                  <div className="filter-options">
-                    {filterOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        className={`filter-option ${selectedFilter === option.name ? 'active' : ''}`}
-                        onClick={() => {
-                          setSelectedFilter(option.name);
-                          setIsFilterOpen(false);
-                        }}
-                      >
-                        <div className="option-icon" style={{ color: option.color }}>
-                          {option.icon}
+                <div className="project-start-wrapper">
+                    <button
+                        className={`project-start-btn ${isProjectMenuOpen ? 'active' : ''}`}
+                        onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
+                    >
+                        Proje Başlat
+                    </button>
+                    {isProjectMenuOpen && (
+                        <div className="project-actions-menu" ref={projectMenuRef}>
+                            <button className="action-btn add" title="Polygon Ekle" onClick={handleAddButton}>
+                                <PenTool size={20} />
+                            </button>
+                            <button className="action-btn save" title="Kaydet" onClick={handleSaveButton}>
+                                <Save size={20} />
+                            </button>
+                            <button className="action-btn cancel" title="İptal" onClick={handleCancelButton}>
+                                <X size={20} />
+                            </button>
                         </div>
-                        <span>{option.name}</span>
-                      </button>
-                    ))}
-                  </div>
+                    )}
                 </div>
-              )}
+                <div className="navbar-right">
+                    <div className="filter-dropdown">
+                        <button
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className={`filter-trigger ${isFilterOpen ? 'active' : ''}`}
+                        >
+                            <div className="filter-selected">
+                                {filterOptions.find((opt) => opt.name === selectedFilter)?.icon}
+                                <span>{selectedFilter}</span>
+                            </div>
+                            <ChevronDown
+                                className={`chevron-icon ${isFilterOpen ? 'rotated' : ''}`}
+                                size={18}
+                            />
+                        </button>
+                        {isFilterOpen && (
+                            <div className="dropdown-menu filter-menu" ref={filterMenuRef}>
+                                <div className="filter-header">
+                                    <h4>Proje Teması Seçin</h4>
+                                </div>
+                                <div className="filter-options">
+                                    {filterOptions.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            className={`filter-option ${selectedFilter === option.name ? 'active' : ''}`}
+                                            onClick={() => handleFilterChange(option.name)}
+                                        >
+                                            <div className="option-icon" style={{ color: option.color }}>
+                                                {option.icon}
+                                            </div>
+                                            <span>{option.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        
-    <div className="model-overlay">
-        <NameModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleModalSave}
-        />
-        </div>
-      </>
+            <div className="model-overlay">
+                <NameModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={onSavePolygonWithName}
+                    onOpenAnalysisPanel={onOpenAnalysisPanel}
+                />
+            </div>
+        </>
     );
-    
-    
 };
 
 export default Navbar;
