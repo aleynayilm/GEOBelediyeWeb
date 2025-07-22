@@ -1,4 +1,3 @@
-// App.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import Table from './Components/GeometryTable/Table';
 import SimpleMap from './Components/Map/Map';
@@ -93,7 +92,7 @@ export default function App() {
         />
 
             {/* Panel Açma Tuşu */}
-            {/* {!showPanel && (
+            {!showPanel && (
                 <button
                     type="button"
                     className="ap-open-trigger"
@@ -102,7 +101,7 @@ export default function App() {
                 >
                     Analiz Sonuçları
                 </button>
-            )} */}
+            )}
 
             {/* Overlay */}
             {showPanel && (

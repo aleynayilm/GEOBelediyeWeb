@@ -3,7 +3,6 @@ import {Home, BarChart3, Settings, Wrench, FileText, Map } from 'lucide-react';
 import './SideBar.css';
 
 const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
-
   const menuItems = [
     { icon: Home, label: 'Ana Sayfa', href: '#' },
     { icon: Map, label: 'Projeler', href: '#' },
