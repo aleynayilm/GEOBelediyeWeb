@@ -75,3 +75,31 @@
     background-color: #0056b3;
   }
   
+  .modal-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  .modal-field label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 1rem;
+  }
+  
+  .modal-field input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  select {
+    width: 100%;
+    padding: 8px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px; /* Aynı köşe yumuşaklığı */
+    box-sizing: border-box;
+    margin-top: 4px;
+    margin-bottom: 12px;
+  }
