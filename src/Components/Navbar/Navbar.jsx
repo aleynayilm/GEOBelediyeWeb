@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import NameModal from './NameModal';
 import './Navbar.css';
 import {
@@ -14,58 +14,45 @@ import {
     Truck
 } from 'lucide-react';
 
-const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel  }) => {
+const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing, onSavePolygonWithName }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [actionStatus, setActionStatus] = useState(null); // '1' ya da '0'
+    const [actionStatus, setActionStatus] = useState(null);
 
     const handleFilterChange = (name) => {
         setSelectedFilter(name);
         setIsFilterOpen(false);
-        onFilterChange?.(name); // dışarı ilet
+        onFilterChange?.(name);
     };
-    //ProjectMenu
+
     const handleAddButton = () => {
         setActionStatus('1');
-        // Menü açık kalacak
+        setIsProjectMenuOpen(false);
+        onStartDrawing?.();
     };
 
     const handleCancelButton = () => {
-        setActionStatus('1');
-        // Menü açık kalacak
+        setActionStatus('0');
+        setIsProjectMenuOpen(false);
+        onStopDrawing?.();
     };
 
     const handleSaveButton = () => {
         setActionStatus('0');
         setIsProjectMenuOpen(false);
-        handleSaveClick();  // Menü kapansın
-    };
-
-
-    //NameModal
-    const handleSaveClick = () => {
+        onStopDrawing?.();
         setIsModalOpen(true);
     };
 
-    const handleModalSave = (name) => {
-        console.log("Kaydedilen isim:", name);
-        // Burada polygon verisiyle birlikte backend'e gönderme işlemi yapılabilir
-        setIsModalOpen(false);
-    };
-
-    // Refs for outside click
     const projectMenuRef = useRef(null);
     const filterMenuRef = useRef(null);
     useEffect(() => {
         const handleClickOutside = (e) => {
-            // Proje menüsü dışına tıklama
             if (isProjectMenuOpen && projectMenuRef.current && !projectMenuRef.current.contains(e.target)) {
                 setIsProjectMenuOpen(false);
             }
-
-            // Filtre menüsü dışına tıklama
             if (isFilterOpen && filterMenuRef.current && !filterMenuRef.current.contains(e.target)) {
                 setIsFilterOpen(false);
             }
@@ -86,15 +73,12 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel
     return (
         <>
             <div className="custom-navbar">
-                {/* Left Side - Hamburger and GEOBelediye */}
                 <div className="navbar-left">
                     <button onClick={toggleSidebar} className="sidebar-toggle-btn">
                         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                     <h1 className="geo-title">GEOBelediye</h1>
                 </div>
-
-                {/* Project Start Section */}
                 <div className="project-start-wrapper">
                     <button
                         className={`project-start-btn ${isProjectMenuOpen ? 'active' : ''}`}
@@ -102,7 +86,6 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel
                     >
                         Proje Başlat
                     </button>
-
                     {isProjectMenuOpen && (
                         <div className="project-actions-menu" ref={projectMenuRef}>
                             <button className="action-btn add" title="Polygon Ekle" onClick={handleAddButton}>
@@ -117,8 +100,6 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel
                         </div>
                     )}
                 </div>
-
-                {/* Right Side - Filter Dropdown */}
                 <div className="navbar-right">
                     <div className="filter-dropdown">
                         <button
@@ -134,13 +115,11 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel
                                 size={18}
                             />
                         </button>
-
                         {isFilterOpen && (
                             <div className="dropdown-menu filter-menu" ref={filterMenuRef}>
                                 <div className="filter-header">
                                     <h4>Proje Teması Seçin</h4>
                                 </div>
-
                                 <div className="filter-options">
                                     {filterOptions.map((option) => (
                                         <button
@@ -160,19 +139,16 @@ const Navbar = ({isSidebarOpen, toggleSidebar,onFilterChange,onOpenAnalysisPanel
                     </div>
                 </div>
             </div>
-
             <div className="model-overlay">
                 <NameModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    onSave={handleModalSave}
-                    onOpenAnalysisPanel={onOpenAnalysisPanel} // Prop'u iletiyoruz
+                    onSave={onSavePolygonWithName}
+                    onOpenAnalysisPanel={onOpenAnalysisPanel}
                 />
             </div>
         </>
     );
-
-
 };
 
 export default Navbar;

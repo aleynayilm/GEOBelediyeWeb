@@ -1,6 +1,5 @@
-// App.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import SimpleMap from './Components/Map/cizimpolygon';
+import SimpleMap from './Components/Map/Map';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from "./Components/Panel/Panel";
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
@@ -20,13 +19,28 @@ export default function App() {
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [drawingMode, setDrawingMode] = useState(false);
 
-    const handlePolygonNameSave = (name) => {
-        setPolygonName(name);
-        setIsNameModalOpen(false);
-        console.log('Girilen Poligon İsmi:', name);
-    };
-
     const mapRef = useRef();
+
+    const handleSavePolygon = async (name) => {
+        if (!mapRef.current) {
+            console.error('Map referansı bulunamadı');
+            return false;
+        }
+
+        try {
+            const saveSuccess = await mapRef.current.savePolygon(name);
+            if (!saveSuccess) {
+                console.error('Polygon save failed');
+                return false;
+            }
+
+            setPolygonName(name);
+            return true;
+        } catch (error) {
+            console.error('Kaydetme hatası:', error);
+            return false;
+        }
+    };
 
     const handleFilterChange = (filterName) => {
         setSelectedFilter(filterName);
@@ -36,7 +50,6 @@ export default function App() {
         setDrawingMode(mode);
     };
 
-    // ESC ile paneli kapat
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === "Escape") {
@@ -48,7 +61,6 @@ export default function App() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    // Panel açıldığında loader göster
     useEffect(() => {
         if (!showPanel) {
             setPanelReady(false);
@@ -83,7 +95,6 @@ export default function App() {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
-    // Modal içindeki buton için panel açma fonksiyonu
     const openAnalysisPanel = () => {
         setShowPanel(true);
     };
@@ -94,24 +105,33 @@ export default function App() {
                 isSidebarOpen={isSidebarOpen}
                 toggleSidebar={toggleSidebar}
                 onFilterChange={handleFilterChange}
-                onOpenAnalysisPanel={openAnalysisPanel} // Yeni prop
+                onOpenAnalysisPanel={openAnalysisPanel}
+                onStartDrawing={() => setDrawingMode(true)}
+                onStopDrawing={() => setDrawingMode(false)}
+                onSavePolygonWithName={handleSavePolygon}
             />
             <SideBar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar}/>
             <SimpleMap
                 ref={mapRef}
                 refreshTrigger={dataVersion}
                 dataUpdated={dataVersion}
+                onOptimizationComplete={(points) => {
+                    console.log('Optimizasyon tamamlandı:', points);
+                }}
                 onDataUpdated={handleDataUpdate}
                 selectedFilter={selectedFilter}
                 drawingMode={drawingMode}
                 onDrawingModeChange={handleDrawingModeChange}
+                onSavePolygonWithName={handleSavePolygon}
             />
-
             <NameModal
                 isOpen={isNameModalOpen}
                 onClose={() => setIsNameModalOpen(false)}
-                onSave={handlePolygonNameSave}
-                onOpenAnalysisPanel={openAnalysisPanel} // Bu prop eklendi
+                onSave={handleSavePolygon}
+                onOpenAnalysisPanel={() => {
+                    setShowPanel(true);
+                    setIsNameModalOpen(false);
+                }}
             />
             {showPanel && (
                 <div

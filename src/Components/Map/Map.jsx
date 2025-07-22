@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, forwardRef, useCallback, useState, useImperativeHandle } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -23,7 +23,8 @@ const SimpleMap = forwardRef(({
                                   selectedFilter,
                                   drawingMode,
                                   onDrawingModeChange,
-                                  onOptimizationComplete
+                                  onOptimizationComplete,
+                                  onSavePolygonWithName
                               }, ref) => {
     const mapRef = useRef();
     const typeSelectRef = useRef();
@@ -34,6 +35,7 @@ const SimpleMap = forwardRef(({
     const overlayRef = useRef();
     const popupContainerRef = useRef();
     const popupContentRef = useRef();
+    const tempPolygonRef = useRef(null);
 
     const customIconUrls = {
         'Atık Yönetimi': '/icons/Trash/recycling-bin.png',
@@ -42,6 +44,74 @@ const SimpleMap = forwardRef(({
         'Otopark Planlama': '/icons/Parking-Lot/car.png',
         'Tüm Projeler': '/icons/default.svg'
     };
+
+    const savePolygon = async (name) => {
+        if (!tempPolygonRef.current) {
+            console.error('Kaydedilecek polygon bulunamadı');
+            return false;
+        }
+
+        try {
+            const wkt = to4326WKT(tempPolygonRef.current);
+            console.log('Saving Polygon WKT:', wkt);
+
+            await addData({ name, wkt });
+            console.log('Polygon saved successfully');
+
+            const optimizedPoints = await optimizePolygon();
+            if (optimizedPoints) {
+                console.log('Optimized points received:', optimizedPoints);
+                onOptimizationComplete?.(optimizedPoints);
+            }
+
+            return true;
+        } catch (e) {
+            console.error('Polygon save or optimization error:', e);
+            throw e;
+        }
+    };
+
+    const optimizePolygon = async () => {
+        if (!tempPolygonRef.current) {
+            console.error('Optimize edilecek polygon bulunamadı');
+            return null;
+        }
+
+        try {
+            const wkt = to4326WKT(tempPolygonRef.current);
+            console.log('Optimizing Polygon WKT:', wkt);
+            const response = await getOptimizedPoints(wkt);
+            console.log('Optimization response:', response);
+
+            const wktFormatter = new WKT();
+            response.data.forEach((point) => {
+                const feature = wktFormatter.readFeature(point.wkt, {
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: 'EPSG:3857',
+                });
+                feature.set('name', point.name || `Nokta-${Math.random().toString(36).substr(2, 5)}`);
+                vectorSource.current.addFeature(feature);
+            });
+
+            const extent = vectorSource.current.getExtent();
+            if (!isNaN(extent[0])) {
+                mapInstance.current.getView().fit(extent, {
+                    padding: [50, 50, 50, 50],
+                    maxZoom: 15,
+                });
+            }
+
+            return response.data;
+        } catch (e) {
+            console.error('Optimization error:', e);
+            throw e;
+        }
+    };
+
+    useImperativeHandle(ref, () => ({
+        savePolygon,
+        optimizePolygon
+    }));
 
     const isLikelyEPSG3857 = (wktString) => {
         const match = wktString.match(/[-]?\d+(?:\.\d+)?/);
@@ -154,7 +224,7 @@ const SimpleMap = forwardRef(({
         const draw = new Draw({
             source: vectorSource.current,
             type: drawType,
-            freehand: true
+            freehand: false
         });
 
         draw.on('drawend', async (evt) => {
@@ -162,41 +232,9 @@ const SimpleMap = forwardRef(({
             const geomType = f.getGeometry().getType();
 
             if (geomType === 'Polygon') {
-                try {
-                    const wkt = to4326WKT(f);
-                    console.log('Gönderilen WKT:', wkt);
-
-                    const response = await getOptimizedPoints(wkt);
-                    console.log('Alınan yanıt:', response.data);
-
-                    if (onOptimizationComplete) {
-                        onOptimizationComplete(response.data);
-                    }
-
-                    vectorSource.current.clear();
-
-                    const wktFormatter = new WKT();
-                    response.data.forEach(point => {
-                        const feature = wktFormatter.readFeature(point.wkt, {
-                            dataProjection: 'EPSG:4326',
-                            featureProjection: 'EPSG:3857',
-                        });
-                        feature.setId(point.id);
-                        feature.set('name', point.name);
-                        feature.set('optimized', true);
-                        vectorSource.current.addFeature(feature);
-                    });
-
-                    const extent = vectorSource.current.getExtent();
-                    if (!isNaN(extent[0])) {
-                        mapInstance.current.getView().fit(extent, {
-                            padding: [50, 50, 50, 50],
-                            maxZoom: 15,
-                        });
-                    }
-                } catch (e) {
-                    console.error('Optimizasyon hatası:', e);
-                    vectorSource.current.removeFeature(f);
+                tempPolygonRef.current = f;
+                if (onDrawingModeChange) {
+                    onDrawingModeChange(false);
                 }
             } else {
                 const wkt = to4326WKT(f);
@@ -286,10 +324,10 @@ const SimpleMap = forwardRef(({
                     : geom.getClosestPoint(mapInstance.current.getView().getCenter());
 
             popupContentRef.current.innerHTML = `
-        <strong>ID:</strong> ${ft.getId()}<br/>
-        <strong>İsim:</strong> ${ft.get('name')}<br/>
-        <button class="del">🗑️ Sil</button>
-      `;
+                <strong>ID:</strong> ${ft.getId()}<br/>
+                <strong>İsim:</strong> ${ft.get('name')}<br/>
+                <button class="del">🗑️ Sil</button>
+            `;
 
             popupContentRef.current.querySelector('.del').onclick = async () => {
                 if (!window.confirm('Silmek istediğinize emin misiniz?')) return;

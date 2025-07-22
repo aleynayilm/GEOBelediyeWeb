@@ -105,7 +105,7 @@ const SimpleMap = forwardRef(({
         const draw = new Draw({
             source: vectorSource.current,
             type: drawType,
-            freehand: true // Enable freehand drawing for better UX
+            freehand: false // Enable freehand drawing for better UX
         });
 
         draw.on('drawend', async (evt) => {

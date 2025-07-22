@@ -4,11 +4,23 @@ import './NameModal.css';
 const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel }) => {
   const [name, setName] = useState('');
 
-  const handleSaveAndOpenPanel = () => {
-    if (name.trim()) {
-      onSave(name.trim());
-      setName('');
-      onOpenAnalysisPanel(); // Analiz panelini aç
+  const handleSave = async () => {
+    if (!name.trim()) {
+      alert('Lütfen geçerli bir isim girin');
+      return;
+    }
+
+    try {
+      const saveSuccess = await onSave(name.trim());
+      if (saveSuccess) {
+        onOpenAnalysisPanel();
+        onClose();
+      } else {
+        alert('Kayıt işlemi başarısız oldu');
+      }
+    } catch (e) {
+      console.error('NameModal save error:', e);
+      alert('Kayıt işlemi başarısız oldu: ' + e.message);
     }
   };
 
@@ -28,7 +40,7 @@ const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel }) => {
             <button className="cancel-btn" onClick={onClose}>
               İptal
             </button>
-            <button className="save-btn" onClick={handleSaveAndOpenPanel}>
+            <button className="save-btn" onClick={handleSave}>
               Kaydet ve Analiz Yap
             </button>
           </div>
