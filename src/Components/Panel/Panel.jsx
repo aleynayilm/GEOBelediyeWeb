@@ -3,68 +3,44 @@ import { updateMinCoverCount } from '../../services/api.jsx';
 import "../../Css/AnalysisPanel.css";
 
 export function AnalysisPanel({
-                                  minCoverCount,              // number
-                                  capacityLtPerMin,           // number
-                                  points,                     // [{id,name,lat,lon,waterLt,mahalle}]
-                                  onMapClick,                 // () => void
-                                  onEditClick,                // () => void  (Items düzenle)
-                                  onEditMinCap,               // () => void  (Kalem tıklanınca)
-                                  onSave,                     // (points) => void
+                                  minCoverCount,
+                                  capacityLtPerMin,
+                                  points,
+                                  onMapClick,
+                                  onEditClick,
+                                  onEditMinCap,
+                                  onSave,
                                   className = "",
                               }) {
     const [entered, setEntered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [tempCoverCount, setTempCoverCount] = useState(minCoverCount);
+
     useEffect(() => {
         setEntered(true);
-      }, []);
+    }, []);
 
-      useEffect(() => {
+    useEffect(() => {
         setTempCoverCount(minCoverCount);
-      }, [minCoverCount]);
-    
-      const handleEditClick = () => {
+    }, [minCoverCount]);
+
+    const handleEditClick = () => {
         setIsEditing(true);
-      };
-    
-      const handleKeyDown = (e) => {
+    };
+
+    const handleKeyDown = (e) => {
         if (e.key === "Enter") {
-          finishEditing();
+            finishEditing();
         }
-      };
-      const finishEditing = () => {
+    };
+
+    const finishEditing = () => {
         setIsEditing(false);
-        // onSave fonksiyonuna güncellenen kapak sayısını ve points gönder
         onSave?.(Number(tempCoverCount), points);
-      };
+    };
 
-//   const handleClose = () => setIsModalOpen(false);
-//   const handleSave = async (newVal) => {
-//     const success = await updateMinCoverCount(newVal); // backend isteği
-//     if (success) {
-//       setCoverCount(newVal);
-//       setIsModalOpen(false);
-//     } else {
-//       alert("Bir hata oluştu.");
-//     }
-//   };
-
-
-    // useEffect(() => {
-    //     // allow next paint, then add enter class for transition
-    //     const id = requestAnimationFrame(() => setEntered(true));
-    //     return () => cancelAnimationFrame(id);
-    // }, []);
-
-    // Eğer minCoverCount prop değişirse coverCount da güncellenmeli
-//   useEffect(() => {
-//     setCoverCount(minCoverCount);
-//   }, [minCoverCount]);
-
-    /* ---- Scroll logic: >6 satırda tablo scroll olsun ---- */
     const scrollRowsThreshold = 6;
     const shouldScroll = points.length > scrollRowsThreshold;
-
 
     const tableMarkup = useMemo(() => (
         <table className="ap-table">
@@ -78,25 +54,27 @@ export function AnalysisPanel({
             </thead>
             <tbody>
             {points.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id || p.name}>
                     <td>{p.name}</td>
                     <td>
-                        {Number(p.lat).toFixed(4)}, {Number(p.lon).toFixed(4)}
+                        {Number(p.lat || p.wkt.match(/[-]?\d+(?:\.\d+)?/g)?.[1] || 0).toFixed(4)},
+                        {Number(p.lon || p.wkt.match(/[-]?\d+(?:\.\d+)?/g)?.[0] || 0).toFixed(4)}
                     </td>
-                    <td>{p.waterLt}</td>
-                    <td>{p.mahalle}</td>
+                    <td>{p.waterLt || 'N/A'}</td>
+                    <td>{p.mahalle || 'N/A'}</td>
                 </tr>
             ))}
             </tbody>
         </table>
     ), [points]);
+
     const handleSaveButtonClick = () => {
         if (isEditing) {
-          finishEditing();
+            finishEditing();
         } else {
-          onSave?.(minCoverCount, points);
+            onSave?.(minCoverCount, points);
         }
-      };
+    };
 
     return (
         <div
@@ -120,23 +98,21 @@ export function AnalysisPanel({
                 <div className="ap-metric-card ap-metric-orange">
                     <div className="ap-metric-body">
                         <span className="ap-metric-label">Önerilen Minimum Kapak Sayısı</span>
-                        <span
-  className={`ap-metric-value ${isEditing ? "editing" : ""}`}
->
-  {isEditing ? (
-    <input
-      type="number"
-      min="1"
-      className="ap-metric-input"
-      value={tempCoverCount}
-      onChange={(e) => setTempCoverCount(e.target.value)}
-      onKeyDown={handleKeyDown}
-      autoFocus
-    />
-  ) : (
-    tempCoverCount
-  )}
-</span>
+                        <span className={`ap-metric-value ${isEditing ? "editing" : ""}`}>
+                            {isEditing ? (
+                                <input
+                                    type="number"
+                                    min="1"
+                                    className="ap-metric-input"
+                                    value={tempCoverCount}
+                                    onChange={(e) => setTempCoverCount(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    autoFocus
+                                />
+                            ) : (
+                                tempCoverCount
+                            )}
+                        </span>
                     </div>
                     <button
                         type="button"
@@ -152,9 +128,9 @@ export function AnalysisPanel({
                     <div className="ap-metric-body">
                         <span className="ap-metric-label">Altyapı Kapasitesi</span>
                         <span className="ap-metric-value">
-              {capacityLtPerMin.toLocaleString("tr-TR")}{" "}
+                            {capacityLtPerMin.toLocaleString("tr-TR")}{" "}
                             <span className="ap-metric-unit">lt/dk</span>
-            </span>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -182,7 +158,6 @@ export function AnalysisPanel({
     );
 }
 
-/* --- Small inline SVGs --- */
 function PencilIcon({ size = 20 }) {
     return (
         <svg

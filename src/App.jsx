@@ -18,6 +18,8 @@ export default function App() {
     const [polygonName, setPolygonName] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [drawingMode, setDrawingMode] = useState(false);
+    const [optimizationStatus, setOptimizationStatus] = useState('pending'); // 'pending', 'success', 'error'
+    const [optimizedPoints, setOptimizedPoints] = useState(null);
 
     const mapRef = useRef();
 
@@ -31,13 +33,14 @@ export default function App() {
             const saveSuccess = await mapRef.current.savePolygon(name);
             if (!saveSuccess) {
                 console.error('Polygon save failed');
+                setOptimizationStatus('error');
                 return false;
             }
-
             setPolygonName(name);
             return true;
         } catch (error) {
             console.error('Kaydetme hatası:', error);
+            setOptimizationStatus('error');
             return false;
         }
     };
@@ -50,11 +53,21 @@ export default function App() {
         setDrawingMode(mode);
     };
 
+    const handleOptimizationComplete = (points) => {
+        if (points) {
+            setOptimizedPoints(points);
+            setOptimizationStatus('success');
+        } else {
+            setOptimizationStatus('error');
+        }
+    };
+
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === "Escape") {
                 setShowPanel(false);
                 setPanelReady(false);
+                setOptimizationStatus('pending');
             }
         };
         window.addEventListener("keydown", onKey);
@@ -64,13 +77,9 @@ export default function App() {
     useEffect(() => {
         if (!showPanel) {
             setPanelReady(false);
+            setOptimizationStatus('pending');
             return;
         }
-        setPanelReady(false);
-        const t = setTimeout(() => {
-            setPanelReady(true);
-        }, 9000);
-        return () => clearTimeout(t);
     }, [showPanel]);
 
     const handleDataUpdate = () => setDataVersion((p) => p + 1);
@@ -84,11 +93,12 @@ export default function App() {
     const handleMap = () => console.log("Haritayı Görüntüle tıklandı");
     const handleEditItems = () => console.log("İtemleri Düzenle tıklandı");
     const handleEditMinCap = () => console.log("Minimum kapak sayısını düzenle tıklandı");
-    const handleSave = (pts) => console.log("Kaydet", pts);
+    const handleSave = (minCoverCount, points) => console.log("Kaydet", { minCoverCount, points });
 
     const closePanel = () => {
         setShowPanel(false);
         setPanelReady(false);
+        setOptimizationStatus('pending');
     };
 
     const toggleSidebar = () => {
@@ -97,6 +107,10 @@ export default function App() {
 
     const openAnalysisPanel = () => {
         setShowPanel(true);
+    };
+
+    const handleSimulationComplete = (points) => {
+        setPanelReady(true);
     };
 
     return (
@@ -115,9 +129,7 @@ export default function App() {
                 ref={mapRef}
                 refreshTrigger={dataVersion}
                 dataUpdated={dataVersion}
-                onOptimizationComplete={(points) => {
-                    console.log('Optimizasyon tamamlandı:', points);
-                }}
+                onOptimizationComplete={handleOptimizationComplete}
                 onDataUpdated={handleDataUpdate}
                 selectedFilter={selectedFilter}
                 drawingMode={drawingMode}
@@ -143,12 +155,16 @@ export default function App() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {!panelReady ? (
-                            <SimulationLoadingCard />
+                            <SimulationLoadingCard
+                                optimizationStatus={optimizationStatus}
+                                optimizedPoints={optimizedPoints}
+                                onComplete={handleSimulationComplete}
+                            />
                         ) : (
                             <AnalysisPanel
                                 minCoverCount={16}
                                 capacityLtPerMin={1600}
-                                points={points}
+                                points={optimizedPoints || points}
                                 onMapClick={handleMap}
                                 onEditClick={handleEditItems}
                                 onEditMinCap={handleEditMinCap}

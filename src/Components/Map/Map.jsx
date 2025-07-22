@@ -11,7 +11,7 @@ import Modify from 'ol/interaction/Modify';
 import Select from 'ol/interaction/Select';
 import Overlay from 'ol/Overlay';
 import WKT from 'ol/format/WKT';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, transform } from 'ol/proj';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { getData as getLocations, addData, updateLocation, deleteLocation, getOptimizedPoints } from '../../Api/api';
 import { defaults as defaultControls } from 'ol/control';
@@ -62,11 +62,14 @@ const SimpleMap = forwardRef(({
             if (optimizedPoints) {
                 console.log('Optimized points received:', optimizedPoints);
                 onOptimizationComplete?.(optimizedPoints);
+            } else {
+                onOptimizationComplete?.(null);
             }
 
             return true;
         } catch (e) {
             console.error('Polygon save or optimization error:', e);
+            onOptimizationComplete?.(null);
             throw e;
         }
     };
@@ -104,7 +107,7 @@ const SimpleMap = forwardRef(({
             return response.data;
         } catch (e) {
             console.error('Optimization error:', e);
-            throw e;
+            return null;
         }
     };
 
@@ -122,8 +125,12 @@ const SimpleMap = forwardRef(({
         const geometry = feature.getGeometry();
         if (geometry.getType() === 'Polygon') {
             const coordinates = geometry.getCoordinates()[0];
-            const wktCoords = coordinates.map(coord => `${coord[0]} ${coord[1]}`).join(', ');
-            return `POLYGON((${wktCoords}))`;
+            const wktCoords = coordinates.map(coord => {
+                const [lon, lat] = transform(coord, 'EPSG:3857', 'EPSG:4326');
+                return `${lon} ${lat}`;
+            }).join(', ');
+            // return `POLYGON((${wktCoords}))`;
+            return  'POLYGON((30 10, 40 40, 20 40, 10 20, 5 10, 15 5, 25 5, 30 10))'
         }
         return new WKT().writeFeature(feature, {
             dataProjection: 'EPSG:4326',
