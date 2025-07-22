@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 
-export default function SimulationLoadingCard() {
-    const [phase, setPhase] = useState(1); // 1: başlıyor, 2: bulut, 3: başarılı, 4: tik animasyonu
+export default function SimulationLoadingCard({ optimizationStatus, optimizedPoints, onComplete }) {
+    const [phase, setPhase] = useState(1); // 1: başlıyor, 2: bulut, 3: başarılı, 4: tik animasyonu, 5: hata
     const [startingText, setStartingText] = useState('');
     const [successText, setSuccessText] = useState('');
+    const [errorText, setErrorText] = useState('');
 
     const startingMessage = "Simülasyon başlıyor...";
     const successMessage = "Simülasyon başarılı";
+    const errorMessage = "Simülasyon başarısız oldu";
 
     useEffect(() => {
         if (phase === 1) {
@@ -20,19 +22,23 @@ export default function SimulationLoadingCard() {
                     setTimeout(() => setPhase(2), 1000);
                 }
             }, 80);
-
             return () => clearInterval(typeInterval);
         }
     }, [phase]);
 
     useEffect(() => {
         if (phase === 2) {
-            const cloudTimer = setTimeout(() => {
-                setPhase(3);
-            }, 2000);
-            return () => clearTimeout(cloudTimer);
+            const minLoadingDuration = 2000; // Minimum 2 seconds for loading animation
+            const timer = setTimeout(() => {
+                if (optimizationStatus === 'success') {
+                    setPhase(3);
+                } else if (optimizationStatus === 'error') {
+                    setPhase(5);
+                }
+            }, minLoadingDuration);
+            return () => clearTimeout(timer);
         }
-    }, [phase]);
+    }, [phase, optimizationStatus]);
 
     useEffect(() => {
         if (phase === 3) {
@@ -43,12 +49,31 @@ export default function SimulationLoadingCard() {
                     index++;
                 } else {
                     clearInterval(typeInterval);
-                    setTimeout(() => setPhase(4), 800);
+                    setTimeout(() => {
+                        setPhase(4);
+                        setTimeout(() => onComplete?.(optimizedPoints), 800);
+                    }, 800);
                 }
             }, 80);
             return () => clearInterval(typeInterval);
         }
-    }, [phase]);
+    }, [phase, optimizedPoints, onComplete]);
+
+    useEffect(() => {
+        if (phase === 5) {
+            let index = 0;
+            const typeInterval = setInterval(() => {
+                if (index < errorMessage.length) {
+                    setErrorText(errorMessage.substring(0, index + 1));
+                    index++;
+                } else {
+                    clearInterval(typeInterval);
+                    setTimeout(() => onComplete?.(null), 800);
+                }
+            }, 80);
+            return () => clearInterval(typeInterval);
+        }
+    }, [phase, onComplete]);
 
     return (
         <div className="ap-root ap-loading-card ap-enter ap-entered">
@@ -59,7 +84,6 @@ export default function SimulationLoadingCard() {
                         <span className="ap-typewriter-cursor">|</span>
                     </div>
                 )}
-
                 {phase === 2 && (
                     <div className="ap-loading-center">
                         <div className="loader" role="status" aria-label="Yükleniyor">
@@ -74,14 +98,12 @@ export default function SimulationLoadingCard() {
                         </div>
                     </div>
                 )}
-
                 {phase === 3 && (
                     <div className="ap-typewriter ap-success">
                         <span className="ap-typewriter-text">{successText}</span>
                         <span className="ap-typewriter-cursor">|</span>
                     </div>
                 )}
-
                 {phase === 4 && (
                     <div className="ap-success-container">
                         <div className="ap-typewriter ap-success">
@@ -97,6 +119,12 @@ export default function SimulationLoadingCard() {
                                 />
                             </svg>
                         </div>
+                    </div>
+                )}
+                {phase === 5 && (
+                    <div className="ap-typewriter ap-error">
+                        <span className="ap-typewriter-text">{errorText}</span>
+                        <span className="ap-typewriter-cursor">|</span>
                     </div>
                 )}
             </div>
