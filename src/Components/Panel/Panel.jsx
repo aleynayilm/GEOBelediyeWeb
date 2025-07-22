@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { updateMinCoverCount } from '../../services/api.jsx';
 import "../../Css/AnalysisPanel.css";
 
 export function AnalysisPanel({
@@ -10,11 +9,13 @@ export function AnalysisPanel({
                                   onEditClick,
                                   onEditMinCap,
                                   onSave,
+                                  onSimulate,
                                   className = "",
                               }) {
     const [entered, setEntered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [tempCoverCount, setTempCoverCount] = useState(minCoverCount);
+    const [isSimulating, setIsSimulating] = useState(false);
 
     useEffect(() => {
         setEntered(true);
@@ -22,10 +23,12 @@ export function AnalysisPanel({
 
     useEffect(() => {
         setTempCoverCount(minCoverCount);
+        setIsSimulating(false);
     }, [minCoverCount]);
 
     const handleEditClick = () => {
         setIsEditing(true);
+        setIsSimulating(true);
     };
 
     const handleKeyDown = (e) => {
@@ -36,7 +39,28 @@ export function AnalysisPanel({
 
     const finishEditing = () => {
         setIsEditing(false);
-        onSave?.(Number(tempCoverCount), points);
+        setIsSimulating(true);
+    };
+
+    const handleSaveButtonClick = () => {
+        if (isEditing) {
+            finishEditing();
+            onSimulate?.(Number(tempCoverCount));
+        } else if (isSimulating) {
+            onSimulate?.(Number(tempCoverCount));
+        } else {
+            // Format points for addRange API
+            const formattedPoints = points.map((point, index) => ({
+                id: point.id && point.id !== 0 ? point.id : `temp-${index}`,
+                name: point.name || `Optimized Bin-${index + 1}`,
+                wkt: point.wkt || (point.lat && point.lon ? `POINT(${point.lon} ${point.lat})` : null),
+            })).filter((point) => point.wkt && point.wkt !== "POINT(0 0)"); // Filter out invalid points
+            if (formattedPoints.length === 0) {
+                console.warn("No valid points to save");
+                return;
+            }
+            onSave?.(formattedPoints);
+        }
     };
 
     const scrollRowsThreshold = 6;
@@ -53,28 +77,35 @@ export function AnalysisPanel({
             </tr>
             </thead>
             <tbody>
-            {points.map((p) => (
-                <tr key={p.id || p.name}>
-                    <td>{p.name}</td>
-                    <td>
-                        {Number(p.lat || p.wkt.match(/[-]?\d+(?:\.\d+)?/g)?.[1] || 0).toFixed(4)},
-                        {Number(p.lon || p.wkt.match(/[-]?\d+(?:\.\d+)?/g)?.[0] || 0).toFixed(4)}
-                    </td>
-                    <td>{p.waterLt || 'N/A'}</td>
-                    <td>{p.mahalle || 'N/A'}</td>
-                </tr>
-            ))}
+            {points.map((p, index) => {
+                let lon = 0,
+                    lat = 0;
+                if (p.wkt) {
+                    // Updated regex to handle high-precision decimals
+                    const wktMatch = p.wkt.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
+                    if (wktMatch) {
+                        lon = Number(wktMatch[1]).toFixed(4);
+                        lat = Number(wktMatch[2]).toFixed(4);
+                    } else {
+                        console.warn(`Invalid WKT format for point: ${p.wkt}`);
+                    }
+                } else if (p.lon && p.lat) {
+                    lon = Number(p.lon).toFixed(4);
+                    lat = Number(p.lat).toFixed(4);
+                }
+                // Use unique key based on id or index
+                return (
+                    <tr key={p.id && p.id !== 0 ? p.id : `point-${index}`}>
+                        <td>{p.name || `Nokta-${index + 1}`}</td>
+                        <td>{lat === "0.0000" && lon === "0.0000" ? "N/A" : `${lat}, ${lon}`}</td>
+                        <td>{p.waterLt || "N/A"}</td>
+                        <td>{p.mahalle || "N/A"}</td>
+                    </tr>
+                );
+            })}
             </tbody>
         </table>
     ), [points]);
-
-    const handleSaveButtonClick = () => {
-        if (isEditing) {
-            finishEditing();
-        } else {
-            onSave?.(minCoverCount, points);
-        }
-    };
 
     return (
         <div
@@ -99,20 +130,20 @@ export function AnalysisPanel({
                     <div className="ap-metric-body">
                         <span className="ap-metric-label">Önerilen Minimum Kapak Sayısı</span>
                         <span className={`ap-metric-value ${isEditing ? "editing" : ""}`}>
-                            {isEditing ? (
-                                <input
-                                    type="number"
-                                    min="1"
-                                    className="ap-metric-input"
-                                    value={tempCoverCount}
-                                    onChange={(e) => setTempCoverCount(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    autoFocus
-                                />
-                            ) : (
-                                tempCoverCount
-                            )}
-                        </span>
+              {isEditing ? (
+                  <input
+                      type="number"
+                      min="1"
+                      className="ap-metric-input"
+                      value={tempCoverCount}
+                      onChange={(e) => setTempCoverCount(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      autoFocus
+                  />
+              ) : (
+                  tempCoverCount
+              )}
+            </span>
                     </div>
                     <button
                         type="button"
@@ -128,29 +159,18 @@ export function AnalysisPanel({
                     <div className="ap-metric-body">
                         <span className="ap-metric-label">Altyapı Kapasitesi</span>
                         <span className="ap-metric-value">
-                            {capacityLtPerMin.toLocaleString("tr-TR")}{" "}
+              {capacityLtPerMin.toLocaleString("tr-TR")}{" "}
                             <span className="ap-metric-unit">lt/dk</span>
-                        </span>
+            </span>
                     </div>
                 </div>
             </div>
 
             <div className="ap-table-wrapper">
-                {shouldScroll ? (
-                    <div className="ap-table-scroll">
-                        {tableMarkup}
-                    </div>
-                ) : (
-                    tableMarkup
-                )}
-
+                {shouldScroll ? <div className="ap-table-scroll">{tableMarkup}</div> : tableMarkup}
                 <div className="ap-table-actions">
-                    <button
-                        type="button"
-                        className="ap-save-btn"
-                        onClick={handleSaveButtonClick}
-                    >
-                        Kaydet
+                    <button type="button" className="ap-save-btn" onClick={handleSaveButtonClick}>
+                        {isSimulating ? "Simüle Et" : "Kaydet"}
                     </button>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 export default function SimulationLoadingCard({ optimizationStatus, optimizedPoints, onComplete }) {
-    const [phase, setPhase] = useState(1); // 1: başlıyor, 2: bulut, 3: başarılı, 4: tik animasyonu
+    const [phase, setPhase] = useState(1); // 1: başlıyor, 2: bulut, 3: başarılı, 4: tik animasyonu, 5: hata
     const [startingText, setStartingText] = useState('');
     const [successText, setSuccessText] = useState('');
     const [errorText, setErrorText] = useState('');
@@ -28,12 +28,15 @@ export default function SimulationLoadingCard({ optimizationStatus, optimizedPoi
 
     useEffect(() => {
         if (phase === 2) {
-            if (optimizationStatus === 'success') {
-                setPhase(3);
-            } else if (optimizationStatus === 'error') {
-                setPhase(5); // Error phase
-            }
-            // Stay in phase 2 until optimizationStatus changes
+            const minLoadingDuration = 2000; // Minimum 2 seconds for loading animation
+            const timer = setTimeout(() => {
+                if (optimizationStatus === 'success') {
+                    setPhase(3);
+                } else if (optimizationStatus === 'error') {
+                    setPhase(5);
+                }
+            }, minLoadingDuration);
+            return () => clearTimeout(timer);
         }
     }, [phase, optimizationStatus]);
 
@@ -48,7 +51,7 @@ export default function SimulationLoadingCard({ optimizationStatus, optimizedPoi
                     clearInterval(typeInterval);
                     setTimeout(() => {
                         setPhase(4);
-                        setTimeout(() => onComplete?.(optimizedPoints), 800); // Trigger AnalysisPanel
+                        setTimeout(() => onComplete?.(optimizedPoints), 800);
                     }, 800);
                 }
             }, 80);
@@ -57,7 +60,7 @@ export default function SimulationLoadingCard({ optimizationStatus, optimizedPoi
     }, [phase, optimizedPoints, onComplete]);
 
     useEffect(() => {
-        if (phase === 5) { // Error phase
+        if (phase === 5) {
             let index = 0;
             const typeInterval = setInterval(() => {
                 if (index < errorMessage.length) {
@@ -65,7 +68,7 @@ export default function SimulationLoadingCard({ optimizationStatus, optimizedPoi
                     index++;
                 } else {
                     clearInterval(typeInterval);
-                    setTimeout(() => onComplete?.(null), 800); // Close without points
+                    setTimeout(() => onComplete?.(null), 800);
                 }
             }, 80);
             return () => clearInterval(typeInterval);
