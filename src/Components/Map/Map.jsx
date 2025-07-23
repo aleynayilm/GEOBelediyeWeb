@@ -16,6 +16,7 @@ import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 import { getData as getLocations, addData, updateLocation, deleteLocation, getOptimizedPoints, addRange } from '../../Api/api';
 import { defaults as defaultControls } from 'ol/control';
 import Icon from 'ol/style/Icon';
+import { calculatePolygonArea } from '../../utils/calculatePolygonArea';
 
 const SimpleMap = React.forwardRef(
     (
@@ -42,22 +43,30 @@ const SimpleMap = React.forwardRef(
             'Tüm Projeler': '/icons/default.svg',
         };
 
-        const savePolygon = async (name, type) => {
+        const getPolygonArea = () => {
             if (!tempPolygonRef.current) {
-                console.error('Kaydedilecek polygon bulunamadı');
+                console.error('Alan hesaplanacak poligon bulunamadı');
+                return null;
+            }
+            return calculatePolygonArea(tempPolygonRef.current);
+        };
+
+        const savePolygon = async (name, type, area) => {
+            if (!tempPolygonRef.current) {
+                console.error('Kaydedilecek poligon bulunamadı');
                 return false;
             }
 
             try {
                 const wkt = to4326WKT(tempPolygonRef.current);
-                console.log('Saving Polygon WKT:', wkt);
+                console.log('Saving Polygon WKT:', wkt, 'Area:', area);
 
-                await addData({ name, wkt, typeN: type }); // Use typeN
-                console.log('Polygon saved successfully');
+                await addData({ name, wkt, typeN: type, area });
+                console.log('Poligon başarıyla kaydedildi');
 
-                const optimizedPoints = await optimizePolygon(wkt, 5, name); // Pass polygon name
+                const optimizedPoints = await optimizePolygon(wkt, 5, name);
                 if (optimizedPoints) {
-                    console.log('Optimized points received:', optimizedPoints);
+                    console.log('Optimize edilmiş noktalar alındı:', optimizedPoints);
                     onOptimizationComplete?.(optimizedPoints);
                 } else {
                     onOptimizationComplete?.(null);
@@ -65,7 +74,7 @@ const SimpleMap = React.forwardRef(
 
                 return wkt;
             } catch (e) {
-                console.error('Polygon save or optimization error:', e);
+                console.error('Poligon kaydetme veya optimizasyon hatası:', e);
                 onOptimizationComplete?.(null);
                 throw e;
             }
@@ -73,7 +82,7 @@ const SimpleMap = React.forwardRef(
 
         const optimizePolygon = async (wkt, minCoverCount = 5, polygonName) => {
             if (!wkt) {
-                console.error('Optimize edilecek polygon bulunamadı');
+                console.error('Optimize edilecek poligon bulunamadı');
                 return null;
             }
 
@@ -87,7 +96,7 @@ const SimpleMap = React.forwardRef(
                     .map((point, index) => ({
                         ...point,
                         id: point.id || `temp-opt-${index}`,
-                        name: `${polygonName}-${index + 1}`, // Use polygon name with index
+                        name: `${polygonName}-${index + 1}`,
                     }))
                     .filter((point) => {
                         if (!point.wkt) {
@@ -156,9 +165,9 @@ const SimpleMap = React.forwardRef(
                         const lon = Number(wktMatch[1]).toFixed(6);
                         const lat = Number(wktMatch[2]).toFixed(6);
                         return {
-                            name: `${polygonName}-${index + 1}`, // Use polygon name with index
+                            name: `${polygonName}-${index + 1}`,
                             wkt: `POINT(${lon} ${lat})`,
-                            typeN: type, // Use typeN
+                            typeN: type,
                         };
                     })
                     .filter(Boolean);
@@ -226,6 +235,7 @@ const SimpleMap = React.forwardRef(
             optimizePolygon,
             addRange: savePointsRange,
             enablePointEditing,
+            getPolygonArea,
         }));
 
         const isLikelyEPSG3857 = (wktString) => {
@@ -370,7 +380,7 @@ const SimpleMap = React.forwardRef(
                         return;
                     }
                     try {
-                        await addData({ name, wkt, typeN: selectedFilter }); // Use typeN
+                        await addData({ name, wkt, typeN: selectedFilter });
                         await loadFeaturesFromAPI();
                         onDataUpdated?.();
                     } catch (e) {
@@ -431,10 +441,10 @@ const SimpleMap = React.forwardRef(
                             : geom.getClosestPoint(mapInstance.current.getView().getCenter());
 
                 popupContentRef.current.innerHTML = `
-                <strong>ID:</strong> ${ft.getId()}<br/>
-                <strong>İsim:</strong> ${ft.get('name')}<br/>
-                <button class="del">🗑️ Sil</button>
-            `;
+          <strong>ID:</strong> ${ft.getId()}<br/>
+          <strong>İsim:</strong> ${ft.get('name')}<br/>
+          <button class="del">🗑️ Sil</button>
+        `;
 
                 popupContentRef.current.querySelector('.del').onclick = async () => {
                     if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
