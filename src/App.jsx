@@ -25,7 +25,7 @@ export default function App() {
 
     const mapRef = useRef();
 
-    const handleSavePolygon = async (name) => {
+    const handleSavePolygon = async (name, type) => {
         if (!mapRef.current) {
             console.error('Map referansı bulunamadı');
             setOptimizationStatus('error');
@@ -33,9 +33,9 @@ export default function App() {
         }
 
         try {
-            setOptimizationStatus('pending'); // Start animation
-            setShowPanel(true); // Open panel to show loading animation
-            const wkt = await mapRef.current.savePolygon(name);
+            setOptimizationStatus('pending');
+            setShowPanel(true);
+            const wkt = await mapRef.current.savePolygon(name, type);
             if (!wkt) {
                 console.error('Polygon save failed');
                 setOptimizationStatus('error');
@@ -82,7 +82,7 @@ export default function App() {
         setPanelReady(false);
         setOptimizationStatus('pending');
         try {
-            const points = await mapRef.current.optimizePolygon(lastPolygonWkt, newMinCoverCount);
+            const points = await mapRef.current.optimizePolygon(lastPolygonWkt, newMinCoverCount, polygonName);
             setMinCoverCount(newMinCoverCount);
             handleOptimizationComplete(points);
         } catch (error) {
@@ -97,7 +97,7 @@ export default function App() {
             return;
         }
         try {
-            await mapRef.current.addRange(points);
+            await mapRef.current.addRange(points, selectedFilter, polygonName); // Pass type and polygonName
             console.log('Points saved successfully');
             setOptimizationStatus('success');
         } catch (error) {

@@ -42,7 +42,7 @@ const SimpleMap = React.forwardRef(
             'Tüm Projeler': '/icons/default.svg',
         };
 
-        const savePolygon = async (name) => {
+        const savePolygon = async (name, type) => {
             if (!tempPolygonRef.current) {
                 console.error('Kaydedilecek polygon bulunamadı');
                 return false;
@@ -52,10 +52,10 @@ const SimpleMap = React.forwardRef(
                 const wkt = to4326WKT(tempPolygonRef.current);
                 console.log('Saving Polygon WKT:', wkt);
 
-                await addData({ name, wkt });
+                await addData({ name, wkt, typeN: type }); // Use typeN
                 console.log('Polygon saved successfully');
 
-                const optimizedPoints = await optimizePolygon(wkt);
+                const optimizedPoints = await optimizePolygon(wkt, 5, name); // Pass polygon name
                 if (optimizedPoints) {
                     console.log('Optimized points received:', optimizedPoints);
                     onOptimizationComplete?.(optimizedPoints);
@@ -71,7 +71,7 @@ const SimpleMap = React.forwardRef(
             }
         };
 
-        const optimizePolygon = async (wkt, minCoverCount = 5) => {
+        const optimizePolygon = async (wkt, minCoverCount = 5, polygonName) => {
             if (!wkt) {
                 console.error('Optimize edilecek polygon bulunamadı');
                 return null;
@@ -86,8 +86,8 @@ const SimpleMap = React.forwardRef(
                 const validPoints = response.data
                     .map((point, index) => ({
                         ...point,
-                        id: point.id || `temp-opt-${index}`, // Assign temp ID for frontend use
-                        name: point.name || `Optimized Bin-${index + 1}`, // Ensure unique names
+                        id: point.id || `temp-opt-${index}`,
+                        name: `${polygonName}-${index + 1}`, // Use polygon name with index
                     }))
                     .filter((point) => {
                         if (!point.wkt) {
@@ -97,7 +97,6 @@ const SimpleMap = React.forwardRef(
                         return true;
                     });
 
-                // Filter out duplicate coordinates
                 const uniquePoints = [];
                 const seenCoordinates = new Set();
                 validPoints.forEach((point) => {
@@ -140,14 +139,13 @@ const SimpleMap = React.forwardRef(
             }
         };
 
-        const savePointsRange = async (points) => {
+        const savePointsRange = async (points, type, polygonName) => {
             if (!points || points.length === 0) {
                 console.error('No points to save');
                 throw new Error('No points to save');
             }
 
             try {
-                // Validate and format points, omitting Id for new records
                 const data = points
                     .map((point, index) => {
                         const wktMatch = point.wkt?.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
@@ -155,26 +153,25 @@ const SimpleMap = React.forwardRef(
                             console.warn(`Invalid WKT for point ${index}: ${point.wkt}`);
                             return null;
                         }
-                        // Normalize coordinates to 6 decimal places
                         const lon = Number(wktMatch[1]).toFixed(6);
                         const lat = Number(wktMatch[2]).toFixed(6);
                         return {
-                            Name: point.name || `Nokta-${index + 1}`,
-                            Wkt: `POINT(${lon} ${lat})`,
+                            name: `${polygonName}-${index + 1}`, // Use polygon name with index
+                            wkt: `POINT(${lon} ${lat})`,
+                            typeN: type, // Use typeN
                         };
                     })
-                    .filter(Boolean); // Remove invalid points
+                    .filter(Boolean);
 
-                // Filter out duplicate coordinates
                 const uniquePoints = [];
                 const seenCoordinates = new Set();
                 data.forEach((point) => {
-                    const coordKey = point.Wkt;
+                    const coordKey = point.wkt;
                     if (!seenCoordinates.has(coordKey)) {
                         seenCoordinates.add(coordKey);
                         uniquePoints.push(point);
                     } else {
-                        console.warn(`Duplicate coordinates found for point: ${point.Name}, WKT: ${point.Wkt}`);
+                        console.warn(`Duplicate coordinates found for point: ${point.name}, WKT: ${point.wkt}`);
                     }
                 });
 
@@ -373,7 +370,7 @@ const SimpleMap = React.forwardRef(
                         return;
                     }
                     try {
-                        await addData({ name, wkt });
+                        await addData({ name, wkt, typeN: selectedFilter }); // Use typeN
                         await loadFeaturesFromAPI();
                         onDataUpdated?.();
                     } catch (e) {
