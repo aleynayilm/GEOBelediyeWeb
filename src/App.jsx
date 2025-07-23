@@ -18,7 +18,8 @@ export default function App() {
     const [optimizationStatus, setOptimizationStatus] = useState('pending');
     const [optimizedPoints, setOptimizedPoints] = useState(null);
     const [lastPolygonWkt, setLastPolygonWkt] = useState(null);
-    const [minCoverCount, setMinCoverCount] = useState(16);
+    const [minCoverCount, setMinCoverCount] = useState(1);
+    const [capacity, setCapacity] = useState(0);
     const [polygonName, setPolygonName] = useState('');
 
     const mapRef = useRef();
@@ -33,7 +34,7 @@ export default function App() {
         try {
             setOptimizationStatus('pending');
             setShowPanel(true);
-            const wkt = await mapRef.current.savePolygon(data.name, data.typeN, data.area);
+            const wkt = await mapRef.current.savePolygon(data.name, data.typeN, data.area, data.minCoverCount);
             if (!wkt) {
                 console.error('Polygon save failed');
                 setOptimizationStatus('error');
@@ -41,6 +42,8 @@ export default function App() {
             }
             setPolygonName(data.name);
             setLastPolygonWkt(wkt);
+            setMinCoverCount(data.minCoverCount);
+            setCapacity(data.capacity);
             return true;
         } catch (error) {
             console.error('Kaydetme hatası:', error);
@@ -139,9 +142,9 @@ export default function App() {
     const handleDataUpdate = () => setDataVersion((p) => p + 1);
 
     const defaultPoints = [
-        { id: 1, name: 'Nokta 1', lat: 40.9876, lon: 29.1234, waterLt: 2200, mahalle: 'Merkez' },
-        { id: 2, name: 'Nokta 2', lat: 41.0011, lon: 29.1456, waterLt: 1800, mahalle: 'Çınar' },
-        { id: 3, name: 'Nokta 3', lat: 40.9823, lon: 29.1307, waterLt: 2500, mahalle: 'Dernek' },
+        { id: 1, name: 'Nokta 1', lat: 40.9876, lon: 29.1234, waterLt: 2200, mahalle: 'Merkez', typeN: 'Tüm Projeler' },
+        { id: 2, name: 'Nokta 2', lat: 41.0011, lon: 29.1456, waterLt: 1800, mahalle: 'Çınar', typeN: 'Tüm Projeler' },
+        { id: 3, name: 'Nokta 3', lat: 40.9823, lon: 29.1307, waterLt: 2500, mahalle: 'Dernek', typeN: 'Tüm Projeler' },
     ];
 
     const handleEditItems = () => {
@@ -201,7 +204,7 @@ export default function App() {
                         ) : (
                             <AnalysisPanel
                                 minCoverCount={minCoverCount}
-                                capacityLtPerMin={1600}
+                                capacityLtPerMin={capacity}
                                 points={optimizedPoints || defaultPoints}
                                 onMapClick={handleMapClick}
                                 onEditClick={handleEditItems}
@@ -209,6 +212,7 @@ export default function App() {
                                 onSave={handleSavePoints}
                                 onSimulate={handleReoptimize}
                                 className="ap-tall ap-showy"
+                                selectedFilter={selectedFilter}
                             />
                         )}
                     </div>

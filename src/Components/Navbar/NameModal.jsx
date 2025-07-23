@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { calculateManholeNeeds } from '../../utils/calculateManholeNeeds';
+import { calculateContainerNeeds } from '../../utils/calculateContainerNeeds';
 import './NameModal.css';
 
 const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel, category, selectedFilter, area }) => {
@@ -29,28 +31,41 @@ const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel, category, sel
     try {
       let saveData;
       if (category === 'container') {
-        if (Number(population) <= 0 || !area) {
-          alert('Lütfen geçerli bir nüfus değeri girin');
+        if (Number(population) <= 0 || !area || !populationDensity) {
+          alert('Lütfen geçerli bir nüfus ve nüfus yoğunluğu değeri girin');
           return;
         }
+        const { estimatedPopulation, totalWastePerDay, containerCount } = calculateContainerNeeds(
+            Number(populationDensity),
+            Number(area)
+        );
         saveData = {
           name: name.trim(),
           typeN: selectedFilter,
           population: Number(population),
           area: Number(area),
           populationDensity: Number(populationDensity),
+          minCoverCount: containerCount,
+          capacity: Number(totalWastePerDay), // kg/gün
         };
       } else if (category === 'manhole') {
         if (!area || !rainfallIntensity || !duration) {
           alert('Lütfen tüm değerleri girin');
           return;
         }
+        const { totalRainwater, requiredManholeCount } = calculateManholeNeeds({
+          area: Number(area),
+          rainfallIntensity: Number(rainfallIntensity),
+          duration: Number(duration),
+        });
         saveData = {
           name: name.trim(),
           typeN: selectedFilter,
           area: Number(area),
           rainfallIntensity: Number(rainfallIntensity),
           duration: Number(duration),
+          minCoverCount: requiredManholeCount,
+          capacity: totalRainwater, // litre
         };
       } else if (category === 'parking') {
         if (!area) {
@@ -62,15 +77,20 @@ const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel, category, sel
           typeN: selectedFilter,
           area: Number(area),
           usageType,
+          minCoverCount: 1, // Varsayılan
+          capacity: 0, // Varsayılan
         };
       } else {
         saveData = {
           name: name.trim(),
           typeN: selectedFilter,
-          area: Number(area) || null, // Alan isteğe bağlı
+          area: Number(area) || null,
+          minCoverCount: 1, // Varsayılan
+          capacity: 0, // Varsayılan
         };
       }
 
+      console.log('Save button clicked', saveData);
       const saveSuccess = await onSave(saveData);
       if (saveSuccess) {
         onOpenAnalysisPanel();
@@ -155,19 +175,14 @@ const NameModal = ({ isOpen, onClose, onSave, onOpenAnalysisPanel, category, sel
           )}
 
           {category === 'parking' && (
-              <>
-                <div className="modal-field">
-                  <h3>Kullanım Türü</h3>
-                  <select
-                      value={usageType}
-                      onChange={(e) => setUsageType(e.target.value)}
-                  >
-                    <option value="residential">Konut</option>
-                    <option value="commercial">Ticari</option>
-                    <option value="mixed">Karma</option>
-                  </select>
-                </div>
-              </>
+              <div className="modal-field">
+                <h3>Kullanım Türü</h3>
+                <select value={usageType} onChange={(e) => setUsageType(e.target.value)}>
+                  <option value="residential">Konut</option>
+                  <option value="commercial">Ticari</option>
+                  <option value="mixed">Karma</option>
+                </select>
+              </div>
           )}
 
           <div className="modal-actions">

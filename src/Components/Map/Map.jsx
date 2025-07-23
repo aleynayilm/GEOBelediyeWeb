@@ -51,7 +51,7 @@ const SimpleMap = React.forwardRef(
             return calculatePolygonArea(tempPolygonRef.current);
         };
 
-        const savePolygon = async (name, type, area) => {
+        const savePolygon = async (name, type, area, minCoverCount) => {
             if (!tempPolygonRef.current) {
                 console.error('Kaydedilecek poligon bulunamadı');
                 return false;
@@ -59,12 +59,12 @@ const SimpleMap = React.forwardRef(
 
             try {
                 const wkt = to4326WKT(tempPolygonRef.current);
-                console.log('Saving Polygon WKT:', wkt, 'Area:', area);
+                console.log('Saving Polygon WKT:', wkt, 'Area:', area, 'minCoverCount:', minCoverCount);
 
                 await addData({ name, wkt, typeN: type, area });
                 console.log('Poligon başarıyla kaydedildi');
 
-                const optimizedPoints = await optimizePolygon(wkt, 5, name);
+                const optimizedPoints = await optimizePolygon(wkt, minCoverCount, name);
                 if (optimizedPoints) {
                     console.log('Optimize edilmiş noktalar alındı:', optimizedPoints);
                     onOptimizationComplete?.(optimizedPoints);
@@ -80,7 +80,7 @@ const SimpleMap = React.forwardRef(
             }
         };
 
-        const optimizePolygon = async (wkt, minCoverCount = 5, polygonName) => {
+        const optimizePolygon = async (wkt, minCoverCount, polygonName) => {
             if (!wkt) {
                 console.error('Optimize edilecek poligon bulunamadı');
                 return null;
@@ -97,6 +97,7 @@ const SimpleMap = React.forwardRef(
                         ...point,
                         id: point.id || `temp-opt-${index}`,
                         name: `${polygonName}-${index + 1}`,
+                        typeN: selectedFilter,
                     }))
                     .filter((point) => {
                         if (!point.wkt) {
@@ -130,16 +131,9 @@ const SimpleMap = React.forwardRef(
                     });
                     feature.set('name', point.name);
                     feature.set('id', point.id);
+                    feature.set('typeN', point.typeN);
                     vectorSource.current.addFeature(feature);
                 });
-
-                const extent = vectorSource.current.getExtent();
-                if (!isNaN(extent[0])) {
-                    mapInstance.current.getView().fit(extent, {
-                        padding: [50, 50, 50, 50],
-                        maxZoom: 15,
-                    });
-                }
 
                 return uniquePoints;
             } catch (e) {
@@ -267,9 +261,12 @@ const SimpleMap = React.forwardRef(
         const styleFunction = useCallback(
             (feature) => {
                 const geomType = feature.getGeometry().getType();
-                const theme = selectedFilter;
-                const iconUrl = customIconUrls[theme] || customIconUrls['Tüm Projeler'];
+                const featureTypeN = feature.get('typeN') || 'Tüm Projeler';
+                if (selectedFilter !== 'Tüm Projeler' && featureTypeN !== selectedFilter) {
+                    return null; // Filtrelenmiş özellikleri gizle
+                }
 
+                const iconUrl = customIconUrls[featureTypeN] || customIconUrls['Tüm Projeler'];
                 const themeColors = {
                     'Atık Yönetimi': '#10b981',
                     'Bölge Planlama': '#f59e0b',
@@ -277,7 +274,7 @@ const SimpleMap = React.forwardRef(
                     'Otopark Planlama': '#8b5cf6',
                     'Tüm Projeler': '#888',
                 };
-                const color = themeColors[theme] || '#888';
+                const color = themeColors[featureTypeN] || '#888';
 
                 if (geomType === 'Point') {
                     return new Style({
@@ -326,6 +323,7 @@ const SimpleMap = React.forwardRef(
 
                 records.forEach((item) => {
                     if (!item.wkt) return;
+                    if (selectedFilter !== 'Tüm Projeler' && item.typeN !== selectedFilter) return;
                     const projection = isLikelyEPSG3857(item.wkt) ? 'EPSG:3857' : 'EPSG:4326';
                     const feature = wktFormatter.readFeature(item.wkt, {
                         dataProjection: projection,
@@ -335,6 +333,7 @@ const SimpleMap = React.forwardRef(
                     if (geomType === 'Point' || geomType === 'Polygon') {
                         feature.setId(item.id);
                         feature.set('name', item.name);
+                        feature.set('typeN', item.typeN || 'Tüm Projeler');
                         vectorSource.current.addFeature(feature);
                     }
                 });
@@ -369,6 +368,7 @@ const SimpleMap = React.forwardRef(
 
                 if (geomType === 'Polygon') {
                     tempPolygonRef.current = f;
+                    f.set('typeN', selectedFilter);
                     if (onDrawingModeChange) {
                         onDrawingModeChange(false);
                     }
@@ -443,6 +443,7 @@ const SimpleMap = React.forwardRef(
                 popupContentRef.current.innerHTML = `
           <strong>ID:</strong> ${ft.getId()}<br/>
           <strong>İsim:</strong> ${ft.get('name')}<br/>
+          <strong>Tür:</strong> ${ft.get('typeN') || 'Tüm Projeler'}<br/>
           <button class="del">🗑️ Sil</button>
         `;
 
@@ -476,7 +477,7 @@ const SimpleMap = React.forwardRef(
                 mapInstance.current.setTarget(undefined);
                 document.removeEventListener('keydown', keyHandler);
             };
-        }, []);
+        }, [selectedFilter]);
 
         useEffect(() => {
             if (drawingMode) {
