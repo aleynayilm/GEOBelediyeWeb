@@ -1,17 +1,27 @@
-export function calculateParkingCapacity({ area, usageType }) {
+export function calculateParkingCapacity({ area, usageType, populationDensity }) {
     const densityByType = {
       residential: 0.8, //her kullanım türü için yoğunluk katsayısı
       commercial: 1.2,
       mixed: 1.0
     };
+
+    const PEOPLE_PER_CAR = 3;              // Her 3 kişi için 1 araç
+  const PARKING_SPACE_SIZE = 25;         // m² başına 1 araçlık park alanı (ortalama)
+
+  const buildingDensity = densityByType[usageType] || 1.0;
+  const estimatedBuildingArea = area * buildingDensity;
   
-    const buildingDensity = densityByType[usageType] || 1.0;
-    const estimatedBuildingArea = area * buildingDensity; //tahmini inşaat alanı m2
-    const requiredParkingSpaces = Math.ceil(estimatedBuildingArea / 100); //Her 100 m² yapı için 1 araçlık otopark gerekir
-  
-    return {
-      estimatedBuildingArea: Math.round(estimatedBuildingArea),
-      requiredParkingSpaces
-    };
+  const estimatedPopulation = populationDensity * area;
+  const requiredParkingSpacesByPopulation = Math.ceil(estimatedPopulation / PEOPLE_PER_CAR);
+  const possibleParkingCapacity = Math.floor(area / PARKING_SPACE_SIZE);
+
+  const isSuitable = possibleParkingCapacity >= requiredParkingSpacesByPopulation;
+
+  return {
+    estimatedPopulation: Math.round(estimatedPopulation),
+    requiredParkingSpacesByPopulation,
+    possibleParkingCapacity,
+    isSuitable
+  };
   } 
   

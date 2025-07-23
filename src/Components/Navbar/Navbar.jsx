@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { calculateContainerNeeds } from '../../utils/calculateContainerNeeds';
 import NameModal from './NameModal';
+import { calculatePolygonArea } from '../../utils/calculatePolygonArea';
 import './Navbar.css';
 import {
     PenTool,
@@ -14,15 +16,55 @@ import {
     Truck
 } from 'lucide-react';
 
-const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing, onSavePolygonWithName }) => {
+const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const tempPolygonRef = useRef(null);
     const [actionStatus, setActionStatus] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState('container');
+    const onSavePolygonWithName = async (data, selectedFeature) => {
+        try {
+          if (typeof data === 'string') {
+            // Sadece isim gelmiş, direkt kaydetme veya başka işlem yapabilirsin
+            console.log('Polygon ismi:', data);
+            // Örnek: backend'e isim kaydetme veya state güncelleme
+            return true;
+          }
 
-    const handleFilterChange = (name) => {
-        setSelectedFilter(name);
+          // data objesi ise (örneğin {name, population, area})
+    let area = data.area;
+
+    // Eğer data.area yoksa selectedFeature'dan alan hesapla
+    if (!area && selectedFeature) {
+      area = calculatePolygonArea(selectedFeature);
+    }
+    
+          // data objesi ise (örneğin {name, population})
+          if (data.population && data.area) {
+            const density = data.population / data.area;
+            const result = calculateContainerNeeds(density, data.area);
+            console.log('Container Analiz Sonucu:', result);
+            // Burada backend çağrısı yapabilir veya state güncelleyebilirsin
+            return true;
+          }
+          
+    
+          // Diğer kategoriler için gerekli işlemleri ekle
+    
+          return false;
+        } catch (error) {
+          console.error('Save polygon error:', error);
+          return false;
+        }
+      };
+
+
+      const handleFilterChange = (name) => {
+        const selected = filterOptions.find((opt) => opt.name === name);
+    setSelectedFilter(name);
+    setSelectedCategory(selected?.category || '');
         setIsFilterOpen(false);
         onFilterChange?.(name);
     };
@@ -63,11 +105,11 @@ const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPa
     }, [isProjectMenuOpen, isFilterOpen]);
 
     const filterOptions = [
-        { id: 1, name: 'Tüm Projeler', icon: <LayoutGrid size={18} />, color: '#3b82f6' },
-        { id: 2, name: 'Atık Yönetimi', icon: <Trash2 size={18} />, color: '#10b981' },
-        { id: 3, name: 'Bölge Planlama', icon: <MapPin size={18} />, color: '#f59e0b' },
-        { id: 4, name: 'Altyapı Yönetimi', icon: <Disc size={18} />, color: '#ec4899' },
-        { id: 5, name: 'Otopark Planlama', icon: <Truck size={18} />, color: '#8b5cf6' }
+        { id: 1, name: 'Tüm Projeler', icon: <LayoutGrid size={18} />, color: '#3b82f6',category: 'all' },
+        { id: 2, name: 'Atık Yönetimi', icon: <Trash2 size={18} />, color: '#10b981', category: 'container' },
+        { id: 3, name: 'Bölge Planlama', icon: <MapPin size={18} />, color: '#f59e0b', category: 'gatheringArea' },
+        { id: 4, name: 'Altyapı Yönetimi', icon: <Disc size={18} />, color: '#ec4899', category: 'manhole' },
+        { id: 5, name: 'Otopark Planlama', icon: <Truck size={18} />, color: '#8b5cf6', category: 'parking' }
     ];
 
     return (
@@ -140,12 +182,14 @@ const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPa
                 </div>
             </div>
             <div className="model-overlay">
-                <NameModal
+            <NameModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    onSave={onSavePolygonWithName}
+                    onSave={(data, name) => onSavePolygonWithName(data,name, tempPolygonRef.current)}
                     onOpenAnalysisPanel={onOpenAnalysisPanel}
+                    category={selectedCategory}
                 />
+
             </div>
         </>
     );
