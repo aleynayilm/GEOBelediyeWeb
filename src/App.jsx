@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SimpleMap from './Components/Map/Map';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import WasteManagementPage from './Pages/WasteManagementPage';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from './Components/Panel/Panel';
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
@@ -13,6 +15,7 @@ export default function App() {
     const [showPanel, setShowPanel] = useState(false);
     const [panelReady, setPanelReady] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [showNavbar, setShowNavbar] = useState(true);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [drawingMode, setDrawingMode] = useState(false);
     const [optimizationStatus, setOptimizationStatus] = useState('pending');
@@ -23,6 +26,10 @@ export default function App() {
     const [polygonName, setPolygonName] = useState('');
 
     const mapRef = useRef();
+    const location = useLocation();
+    const decodedPath = decodeURIComponent(location.pathname);
+    const hideNavbarOnRoutePrefix = '/analiz/';
+    const shouldShowNavbar = !decodedPath.startsWith(hideNavbarOnRoutePrefix);
 
     const handleSavePolygon = async (data) => {
         if (!mapRef.current) {
@@ -170,28 +177,47 @@ export default function App() {
 
     return (
         <div className="app-map-wrapper">
-            <Navbar
+            {shouldShowNavbar && (
+                <Navbar
+                    isSidebarOpen={isSidebarOpen}
+                    toggleSidebar={toggleSidebar}
+                    onFilterChange={handleFilterChange}
+                    onOpenAnalysisPanel={openAnalysisPanel}
+                    onStartDrawing={() => setDrawingMode(true)}
+                    onStopDrawing={() => setDrawingMode(false)}
+                    onSavePolygonWithName={handleSavePolygon}
+                    getPolygonArea={getPolygonArea}
+                />
+            )}
+            <SideBar
                 isSidebarOpen={isSidebarOpen}
-                toggleSidebar={toggleSidebar}
-                onFilterChange={handleFilterChange}
-                onOpenAnalysisPanel={openAnalysisPanel}
-                onStartDrawing={() => setDrawingMode(true)}
-                onStopDrawing={() => setDrawingMode(false)}
-                onSavePolygonWithName={handleSavePolygon}
-                getPolygonArea={getPolygonArea}
+                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                mapRef={mapRef}
             />
-            <SideBar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-            <SimpleMap
-                ref={mapRef}
-                refreshTrigger={dataVersion}
-                dataUpdated={dataVersion}
-                onOptimizationComplete={handleOptimizationComplete}
-                onDataUpdated={handleDataUpdate}
-                selectedFilter={selectedFilter}
-                drawingMode={drawingMode}
-                onDrawingModeChange={handleDrawingModeChange}
-                onSavePolygonWithName={handleSavePolygon}
-            />
+            <Routes>
+                <Route
+                    path="/"
+                    element={
+                        <SimpleMap
+                            ref={mapRef}
+                            refreshTrigger={dataVersion}
+                            dataUpdated={dataVersion}
+                            onOptimizationComplete={handleOptimizationComplete}
+                            onDataUpdated={handleDataUpdate}
+                            selectedFilter={selectedFilter}
+                            drawingMode={drawingMode}
+                            onDrawingModeChange={handleDrawingModeChange}
+                            onSavePolygonWithName={handleSavePolygon}
+                        />
+                    }
+                />
+
+                <Route
+                    path="/analiz/:kategori"
+                    element={<WasteManagementPage />}
+                />
+            </Routes>
+
             {showPanel && (
                 <div className="ap-backdrop ap-backdrop-show" onClick={closePanel}>
                     <div className="ap-backdrop-stop" onClick={(e) => e.stopPropagation()}>

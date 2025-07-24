@@ -10,7 +10,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
   z-index: 1001;
 }
 
@@ -56,7 +56,7 @@
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(26, 86, 219, 0.2);
   letter-spacing: 0.5px;
-  
+
 }
 
 .project-start-btn:hover {
@@ -78,9 +78,11 @@
 .filter-trigger {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* İçeriği eşit dağıt */
+  justify-content: space-between;
+  /* İçeriği eşit dağıt */
   padding: 10px 16px;
-  min-width: 280px; /* Sabit genişlik */
+  min-width: 280px;
+  /* Sabit genişlik */
   position: relative;
   border-radius: 30px;
 
@@ -96,7 +98,8 @@
   color: #475569;
 }
 
-.filter-trigger:hover, .filter-trigger.active {
+.filter-trigger:hover,
+.filter-trigger.active {
   border-color: #cbd5e1;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
@@ -108,7 +111,8 @@
 }
 
 .filter-trigger .filter-selected svg {
-  color: #3b82f6; /* Default icon color */
+  color: #3b82f6;
+  /* Default icon color */
 }
 
 .chevron-icon {
@@ -123,14 +127,15 @@
 
 /* Filter Dropdown Menu */
 .dropdown-menu.filter-menu {
-  width: 280px; /* Aynı genişlik */
+  width: 280px;
+  /* Aynı genişlik */
   min-width: 280px;
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   z-index: 1000;
   animation: dropdownSlide 0.3s ease;
@@ -203,6 +208,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -239,21 +245,25 @@
   animation: dropdownSlide 0.3s ease;
   white-space: nowrap;
 }
+
 @keyframes dropdownSlide {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 }
+
 @keyframes filterDropdownSlide {
   from {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -269,7 +279,8 @@
 }
 
 .action-btn {
-  cursor: pointer; /* Fare imlecini el şeklinde yapar */
+  cursor: pointer;
+  /* Fare imlecini el şeklinde yapar */
   background: none;
   border: none;
   padding: 8px;

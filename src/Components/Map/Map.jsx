@@ -230,7 +230,43 @@ const SimpleMap = React.forwardRef(
             addRange: savePointsRange,
             enablePointEditing,
             getPolygonArea,
+            zoomToProject: (projectId) => {
+                const allFeatures = vectorSource.current.getFeatures();
+                const targetFeature = allFeatures.find((f) => f.getId() === projectId);
+        
+                if (!targetFeature) {
+                    console.warn('Proje bulunamadı:', projectId);
+                    return;
+                }
+        
+                // Diğer projeleri gizle
+                allFeatures.forEach((f) => {
+                    f.setStyle(f.getId() === projectId ? styleFunction(f) : null);
+                });
+        
+                const geometry = targetFeature.getGeometry();
+                const extent = geometry.getType() === 'Point'
+                    ? geometry.getExtent()
+                    : geometry.getExtent();
+                
+                mapInstance.current.getView().fit(extent, {
+                    padding: [50, 50, 50, 50],
+                    maxZoom: 17,
+                    duration: 800,
+                });
+            },
+            clearProjects,
         }));
+
+        const clearProjects = () => {
+            const source = vectorLayer.current.getSource();
+            const features = source.getFeatures();
+            features.forEach((feature) => {
+              if (feature.get('typeN')) {
+                source.removeFeature(feature);
+              }
+            });
+          };
 
         const isLikelyEPSG3857 = (wktString) => {
             const match = wktString.match(/[-]?\d+(?:\.\d+)?/);
@@ -339,12 +375,7 @@ const SimpleMap = React.forwardRef(
                 });
 
                 const extent = vectorSource.current.getExtent();
-                if (!isNaN(extent[0])) {
-                    mapInstance.current.getView().fit(extent, {
-                        padding: [50, 50, 50, 50],
-                        maxZoom: 15,
-                    });
-                }
+              
             } catch (err) {
                 console.error('Veri yüklenirken hata:', err);
             }

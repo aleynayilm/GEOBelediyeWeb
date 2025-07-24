@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// Configure axios to include credentials if needed
+axios.defaults.withCredentials = true;
+
 const API_URL = 'http://localhost:7096/Point';
 
 export const getData = () => axios.get(`${API_URL}/GetAll`);
@@ -8,8 +11,9 @@ export const updateLocation = (data) => axios.put(`${API_URL}/Update/${data.id}`
 export const deleteLocation = (id) => axios.delete(`${API_URL}/Delete/${id}`);
 export const getOptimizedPoints = (polygonWkt, minCoverCount = 5) =>
     axios.post(
-        `http://localhost:7096/api/TrashBin/optimize?cellSize=0.0009&newBinCount=${minCoverCount}&minDistance=0.00027`,
-        JSON.stringify(polygonWkt),
+        'http://localhost:7096/api/TrashBin/optimize?cellSize=0.009&newBinCount=5&minDistance=0.027'
+        ,
+        polygonWkt,
         {
             headers: {
                 'Content-Type': 'application/json'
