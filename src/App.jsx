@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SimpleMap from './Components/Map/Map';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import WasteManagementPage from './Pages/WasteManagementPage';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from './Components/Panel/Panel';
