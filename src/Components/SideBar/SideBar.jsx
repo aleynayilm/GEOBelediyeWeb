@@ -11,7 +11,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
   const [activeAnalysisCategory, setActiveAnalysisCategory] = useState(null);
   const categories = [
     'Atık Yönetimi',
-    'Bölge Planlama ',
+    'Bölge Planlama',
     'Altyapı Yönetimi',
     'Otopark Planlama',
   ];
@@ -22,14 +22,16 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
     { icon: BarChart3, label: 'Analiz Sonuçları', href: '#' },
     { icon: FileText, label: 'Raporlar', href: '#' },
     { icon: Wrench, label: 'Modifikasyonlar', href: '#' },
-    { icon: Settings, label: 'Ayarlar', href: '#' }
+    { icon: Settings, label: 'Ayarlar', href: '#' },
   ];
+
   useEffect(() => {
     fetch('http://localhost:7096/Point/GetAll')
       .then(res => res.json())
       .then(data => setProjectData(data))
       .catch(err => console.error('Proje verileri alınamadı:', err));
   }, []);
+
   const selectProject = (proj) => {
     if (mapRef?.current?.zoomToProject) {
       mapRef.current.zoomToProject(proj.id);
@@ -50,9 +52,10 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
             left: 0,
             width: '100%',
             height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
             zIndex: 998,
-            transition: 'opacity 0.3s ease'
+            transition: 'opacity 0.3s ease-in-out',
+            opacity: isSidebarOpen ? 1 : 0,
           }}
         />
       )}
@@ -64,21 +67,25 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
           top: 0,
           left: 0,
           height: '100%',
-          width: '280px',
-          backgroundColor: 'white',
-          boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+          width: '300px',
+          backgroundColor: '#ffffff',
+          color: '#1f2a44',
+          boxShadow: '4px 0 12px rgba(0, 0, 0, 0.1)',
           zIndex: 999,
           transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.3s ease-in-out'
+          transition: 'transform 0.3s ease-in-out',
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <nav style={{ padding: '16px' }}>
+        <nav style={{ padding: '24px', flexGrow: 1, overflowY: 'auto' }}>
           <ul
             style={{
               listStyle: 'none',
               padding: 0,
               margin: 0,
-              marginTop: '64px',
+              marginTop: '48px',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
@@ -95,9 +102,6 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                       e.preventDefault();
                       if (item.label === 'Ana Sayfa') {
                         navigate('/');
-                        // if (mapRef?.current?.clearProjects) {
-                        //   mapRef.current.clearProjects();
-                        // }
                       }
                       toggleSidebar();
                     }}
@@ -106,23 +110,25 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                       alignItems: 'center',
                       gap: '12px',
                       padding: '12px 16px',
-                      color: '#374151',
+                      color: '#1f2a44',
                       textDecoration: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '10px',
+                      fontSize: '15px',
                       fontWeight: '500',
-                      fontFamily: 'inherit',
+                      transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.1s ease',
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#f3f4f6';
-                      e.target.style.color = '#2563eb';
+                      e.target.style.color = '#3b82f6';
+                      e.target.style.transform = 'translateX(4px)';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = 'transparent';
-                      e.target.style.color = '#374151';
+                      e.target.style.color = '#1f2a44';
+                      e.target.style.transform = 'translateX(0)';
                     }}
                   >
-                    <item.icon size={20} />
+                    <item.icon size={20} strokeWidth={2} />
                     <span>{item.label}</span>
                   </a>
                 </li>
@@ -140,65 +146,74 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '12px 16px',
-                  color: '#374151',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  color: '#1f2a44',
+                  borderRadius: '10px',
+                  fontSize: '15px',
                   fontWeight: '500',
-                  fontFamily: 'inherit',
+                  transition: 'background-color 0.2s ease, transform 0.1s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.transform = 'translateX(0)';
                 }}
               >
-                <Map size={20} />
+                <Map size={20} strokeWidth={2} />
                 <span style={{ flexGrow: 1 }}>Projeler</span>
                 {isProjectsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
               </div>
 
               {isProjectsOpen && (
-                <ul style={{ listStyle: 'none', paddingLeft: '24px' }}>
+                <ul style={{ listStyle: 'none', paddingLeft: '28px', marginTop: '8px' }}>
                   {categories.map((cat, i) => (
                     <li key={i}>
                       <div
-                        onClick={() =>
-                          setActiveCategory(activeCategory === cat ? null : cat)
-                        }
+                        onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
                         style={{
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '6px 0',
-                          fontWeight: '500',
+                          padding: '8px 0',
                           fontSize: '14px',
-                          fontFamily: 'inherit',
-                          color: activeCategory === cat ? '#2563eb' : '#374151',
+                          fontWeight: '500',
+                          color: activeCategory === cat ? '#3b82f6' : '#1f2a44',
+                          cursor: 'pointer',
+                          transition: 'color 0.2s ease, transform 0.1s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.color = '#3b82f6';
+                          e.target.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.color = activeCategory === cat ? '#3b82f6' : '#1f2a44';
+                          e.target.style.transform = 'translateX(0)';
                         }}
                       >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {activeCategory === cat ? (
-                            <ChevronDown size={16} />
-                          ) : (
-                            <ChevronRight size={16} />
-                          )}
-                          {cat}
-                        </span>
+                        {cat}
                       </div>
-
                       {activeCategory === cat && (
-                        <ul style={{ paddingLeft: '24px', marginTop: '4px' }}>
+                        <ul style={{ paddingLeft: '28px', marginTop: '4px' }}>
                           {filteredProjects(cat).map((proj) => (
                             proj.wkt.includes("POLYGON") && (
                               <li
                                 key={proj.id}
                                 style={{
-                                  padding: '6px 0',
+                                  padding: '8px 0',
                                   fontSize: '14px',
                                   fontWeight: '500',
-                                  color: '#374151',
+                                  color: '#1f2a44',
                                   cursor: 'pointer',
-                                  transition: 'color 0.2s ease'
+                                  transition: 'color 0.2s ease, transform 0.1s ease',
                                 }}
                                 onClick={() => selectProject(proj)}
-                                onMouseEnter={(e) => e.target.style.color = '#2563eb'}
-                                onMouseLeave={(e) => e.target.style.color = '#374151'}
+                                onMouseEnter={(e) => {
+                                  e.target.style.color = '#3b82f6';
+                                  e.target.style.transform = 'translateX(4px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.color = '#1f2a44';
+                                  e.target.style.transform = 'translateX(0)';
+                                }}
                               >
                                 {proj.name}
                               </li>
@@ -223,20 +238,28 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '12px 16px',
-                  color: '#374151',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  color: '#1f2a44',
+                  borderRadius: '10px',
+                  fontSize: '15px',
                   fontWeight: '500',
-                  fontFamily: 'inherit',
+                  transition: 'background-color 0.2s ease, transform 0.1s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.target.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.transform = 'translateX(0)';
                 }}
               >
-                <BarChart3 size={20} />
+                <BarChart3 size={20} strokeWidth={2} />
                 <span style={{ flexGrow: 1 }}>Analiz Sonuçları</span>
                 {isAnalysisOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
               </div>
 
               {isAnalysisOpen && (
-                <ul style={{ listStyle: 'none', paddingLeft: '24px' }}>
+                <ul style={{ listStyle: 'none', paddingLeft: '28px', marginTop: '8px' }}>
                   {categories.map((cat, i) => (
                     <li
                       key={i}
@@ -245,15 +268,21 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                         toggleSidebar();
                       }}
                       style={{
-                        padding: '6px 0',
+                        padding: '8px 0',
                         fontSize: '14px',
                         fontWeight: '500',
-                        color: '#374151',
+                        color: '#1f2a44',
                         cursor: 'pointer',
-                        transition: 'color 0.2s ease'
+                        transition: 'color 0.2s ease, transform 0.1s ease',
                       }}
-                      onMouseEnter={(e) => (e.target.style.color = '#2563eb')}
-                      onMouseLeave={(e) => (e.target.style.color = '#374151')}
+                      onMouseEnter={(e) => {
+                        e.target.style.color = '#3b82f6';
+                        e.target.style.transform = 'translateX(4px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.color = '#1f2a44';
+                        e.target.style.transform = 'translateX(0)';
+                      }}
                     >
                       {cat}
                     </li>
@@ -265,50 +294,54 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
         </nav>
 
         {/* Footer */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: '16px',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              backgroundColor: '#d1d5db',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151'
-              }}>
+        <div
+          style={{
+            padding: '20px',
+            borderTop: '1px solid #e5e7eb',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                backgroundColor: '#3b82f6',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                }}
+              >
                 K
               </span>
             </div>
             <div>
-              <p style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#1f2937',
-                margin: 0
-              }}>
+              <p
+                style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1f2a44',
+                  margin: 0,
+                }}
+              >
                 Kullanıcı
               </p>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                margin: 0
-              }}>
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  margin: 0,
+                }}
+              >
                 admin@example.com
               </p>
             </div>
