@@ -24,6 +24,7 @@ export default function App() {
     const [minCoverCount, setMinCoverCount] = useState(1);
     const [capacity, setCapacity] = useState(0);
     const [polygonName, setPolygonName] = useState('');
+    const [showReturnToPanel, setShowReturnToPanel] = useState(false);
 
     const mapRef = useRef();
     const location = useLocation();
@@ -116,6 +117,15 @@ export default function App() {
             await mapRef.current.addRange(points, selectedFilter, polygonName);
             console.log('Points saved successfully');
             setOptimizationStatus('success');
+            setShowPanel(false);
+            setPanelReady(false);
+            setOptimizationStatus('pending');
+            setShowReturnToPanel(false);
+            setOptimizedPoints(null);
+            setLastPolygonWkt(null);
+            setMinCoverCount(1);
+            setCapacity(0);
+            setPolygonName('');
         } catch (error) {
             console.error('Error saving points:', error);
             alert('Noktalar kaydedilemedi');
@@ -125,26 +135,8 @@ export default function App() {
 
     const handleMapClick = () => {
         setShowPanel(false);
+        setShowReturnToPanel(true);
     };
-
-    useEffect(() => {
-        const onKey = (e) => {
-            if (e.key === 'Escape') {
-                setShowPanel(false);
-                setPanelReady(false);
-                setOptimizationStatus('pending');
-            }
-        };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, []);
-
-    useEffect(() => {
-        if (!showPanel) {
-            setPanelReady(false);
-            setOptimizationStatus('pending');
-        }
-    }, [showPanel]);
 
     const handleDataUpdate = () => setDataVersion((p) => p + 1);
 
@@ -163,8 +155,14 @@ export default function App() {
 
     const closePanel = () => {
         setShowPanel(false);
+        setShowReturnToPanel(false);
         setPanelReady(false);
         setOptimizationStatus('pending');
+        setOptimizedPoints(null);
+        setLastPolygonWkt(null);
+        setMinCoverCount(1);
+        setCapacity(0);
+        setPolygonName('');
     };
 
     const toggleSidebar = () => {
@@ -173,6 +171,7 @@ export default function App() {
 
     const openAnalysisPanel = () => {
         setShowPanel(true);
+        setShowReturnToPanel(false);
     };
 
     return (
@@ -187,11 +186,12 @@ export default function App() {
                     onStopDrawing={() => setDrawingMode(false)}
                     onSavePolygonWithName={handleSavePolygon}
                     getPolygonArea={getPolygonArea}
+                    showReturnToPanel={showReturnToPanel}
                 />
             )}
             <SideBar
                 isSidebarOpen={isSidebarOpen}
-                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                toggleSidebar={toggleSidebar} // Use defined function
                 mapRef={mapRef}
             />
             <Routes>
@@ -211,7 +211,6 @@ export default function App() {
                         />
                     }
                 />
-
                 <Route
                     path="/analiz/:kategori"
                     element={<WasteManagementPage />}

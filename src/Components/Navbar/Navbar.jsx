@@ -15,7 +15,7 @@ import {
     Truck,
 } from 'lucide-react';
 
-const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing, onSavePolygonWithName, getPolygonArea }) => {
+const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPanel, onStartDrawing, onStopDrawing, onSavePolygonWithName, getPolygonArea, showReturnToPanel }) => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Tüm Projeler');
     const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
@@ -58,6 +58,14 @@ const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPa
         }
     };
 
+    const handleProjectButton = () => {
+        if (showReturnToPanel) {
+            onOpenAnalysisPanel(); // Reopen the panel
+        } else {
+            setIsProjectMenuOpen(!isProjectMenuOpen); // Toggle project menu
+        }
+    };
+
     const projectMenuRef = useRef(null);
     const filterMenuRef = useRef(null);
     useEffect(() => {
@@ -93,12 +101,12 @@ const Navbar = ({ isSidebarOpen, toggleSidebar, onFilterChange, onOpenAnalysisPa
                 </div>
                 <div className="project-start-wrapper">
                     <button
-                        className={`project-start-btn ${isProjectMenuOpen ? 'active' : ''}`}
-                        onClick={() => setIsProjectMenuOpen(!isProjectMenuOpen)}
+                        className={`project-start-btn ${isProjectMenuOpen && !showReturnToPanel ? 'active' : ''}`}
+                        onClick={handleProjectButton}
                     >
-                        Proje Başlat
+                        {showReturnToPanel ? 'Panele Dön' : 'Proje Başlat'}
                     </button>
-                    {isProjectMenuOpen && (
+                    {isProjectMenuOpen && !showReturnToPanel && (
                         <div className="project-actions-menu" ref={projectMenuRef}>
                             <button className="action-btn add" title="Polygon Ekle" onClick={handleAddButton}>
                                 <PenTool size={20} />

@@ -37,7 +37,8 @@
     overflow-y: auto;
     position: relative;
     min-height: 50vh;
-    margin-top: 16px;
+    height: 490px;
+    margin-top: 56px;
     margin-bottom: 16px;
     max-width: 100%;
     width: 100%;
@@ -242,6 +243,7 @@
 /* Table */
 .ap-table-wrapper {
     width: 100%;
+    height: 200px;
 }
 .ap-table {
     width: 100%;
@@ -313,6 +315,7 @@
 
 .ap-table-scroll {
     max-height: var(--ap-table-scroll-max);
+    height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
 }
