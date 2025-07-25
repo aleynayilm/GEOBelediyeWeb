@@ -26,11 +26,11 @@ const SimpleMap = React.forwardRef(
     ) => {
         const mapRef = useRef();
         const typeSelectRef = useRef();
-        const pointSource = useRef(new VectorSource()); // Source for points
-        const polygonSource = useRef(new VectorSource()); // Source for polygons
+        const pointSource = useRef(new VectorSource());
+        const polygonSource = useRef(new VectorSource());
         const clusterSource = useRef(new Cluster({ source: pointSource.current, distance: 40 }));
-        const pointLayer = useRef(null); // Layer for clustered points
-        const polygonLayer = useRef(null); // Layer for polygons
+        const pointLayer = useRef(null);
+        const polygonLayer = useRef(null);
         const mapInstance = useRef(null);
         const drawRef = useRef(null);
         const overlayRef = useRef();
@@ -69,6 +69,7 @@ const SimpleMap = React.forwardRef(
                 } else {
                     onOptimizationComplete?.(null);
                 }
+                tempPolygonRef.current = null; // Clear after saving
                 return wkt;
             } catch (e) {
                 console.error('Poligon kaydetme veya optimizasyon hatası:', e);
@@ -121,7 +122,7 @@ const SimpleMap = React.forwardRef(
                     feature.set('name', point.name);
                     feature.set('id', point.id);
                     feature.set('typeN', point.typeN);
-                    pointSource.current.addFeature(feature); // Add to pointSource
+                    pointSource.current.addFeature(feature);
                 });
 
                 return uniquePoints;
@@ -180,7 +181,7 @@ const SimpleMap = React.forwardRef(
             if (modifyRef.current) {
                 mapInstance.current.removeInteraction(modifyRef.current);
             }
-            const modify = new Modify({ source: pointSource.current }); // Modify points only
+            const modify = new Modify({ source: pointSource.current });
             mapInstance.current.addInteraction(modify);
             modifyRef.current = modify;
 
@@ -201,12 +202,21 @@ const SimpleMap = React.forwardRef(
             });
         };
 
+        const deleteLastUnsavedPolygon = () => {
+            if (tempPolygonRef.current) {
+                polygonSource.current.removeFeature(tempPolygonRef.current);
+                tempPolygonRef.current = null;
+                onDrawingModeChange?.(false);
+            }
+        };
+
         useImperativeHandle(ref, () => ({
             savePolygon,
             optimizePolygon,
             addRange: savePointsRange,
             enablePointEditing,
             getPolygonArea,
+            deleteLastUnsavedPolygon, // Expose to parent
             zoomToProject: (projectId) => {
                 const allFeatures = [...pointSource.current.getFeatures(), ...polygonSource.current.getFeatures()];
                 const targetFeature = allFeatures.find((f) => f.getId() === projectId);
@@ -257,7 +267,7 @@ const SimpleMap = React.forwardRef(
 
         const styleFunction = useCallback(
             (feature) => {
-                const features = feature.get('features'); // Cluster features for points
+                const features = feature.get('features');
                 const geomType = feature.getGeometry().getType();
                 const featureTypeN = features ? features[0]?.get('typeN') || 'Tüm Projeler' : feature.get('typeN') || 'Tüm Projeler';
 
@@ -277,24 +287,22 @@ const SimpleMap = React.forwardRef(
 
                 if (geomType === 'Point') {
                     if (features && features.length > 1) {
-                        // Cluster style with icon
                         const size = features.length;
                         return new Style({
                             image: new Icon({
-                                src: iconUrl, // Use the same icon as individual points
-                                scale: 0.08, // Slightly larger for clusters
+                                src: iconUrl,
+                                scale: 0.08,
                                 anchor: [0.5, 0.9],
                             }),
                             text: new Text({
-                                text: size.toString(), // Optional: Show number of points
+                                text: size.toString(),
                                 font: 'bold 12px Arial',
                                 fill: new Fill({ color: '#fff' }),
                                 stroke: new Stroke({ color: '#000', width: 2 }),
-                                offsetY: -25, // Adjust position above icon
+                                offsetY: -25,
                             }),
                         });
                     }
-                    // Single point style
                     return new Style({
                         image: new Icon({
                             src: iconUrl,
@@ -353,9 +361,9 @@ const SimpleMap = React.forwardRef(
                     feature.set('name', item.name);
                     feature.set('typeN', item.typeN || 'Tüm Projeler');
                     if (geomType === 'Point') {
-                        pointSource.current.addFeature(feature); // Add points to pointSource
+                        pointSource.current.addFeature(feature);
                     } else if (geomType === 'Polygon') {
-                        polygonSource.current.addFeature(feature); // Add polygons to polygonSource
+                        polygonSource.current.addFeature(feature);
                     }
                 });
             } catch (err) {
@@ -402,6 +410,8 @@ const SimpleMap = React.forwardRef(
                         setTimeout(() => pointSource.current.removeFeature(f), 0);
                     }
                 }
+                mapInstance.current.removeInteraction(draw);
+                drawRef.current = null;
             });
 
             mapInstance.current.addInteraction(draw);
@@ -422,8 +432,8 @@ const SimpleMap = React.forwardRef(
                 target: mapRef.current,
                 layers: [
                     new TileLayer({ source: new OSM() }),
-                    polygonLayer.current, // Add polygon layer first (background)
-                    pointLayer.current,   // Add point layer on top
+                    polygonLayer.current,
+                    pointLayer.current,
                 ],
                 view: new View({
                     center: fromLonLat([34, 39]),
@@ -446,7 +456,7 @@ const SimpleMap = React.forwardRef(
             mapInstance.current.addOverlay(overlayRef.current);
 
             const select = new Select({
-                layers: [pointLayer.current, polygonLayer.current], // Select from both layers
+                layers: [pointLayer.current, polygonLayer.current],
             });
             mapInstance.current.addInteraction(select);
             select.on('select', (evt) => {
@@ -456,7 +466,7 @@ const SimpleMap = React.forwardRef(
                     return;
                 }
 
-                const features = ft.get('features'); // Check if it's a cluster (points only)
+                const features = ft.get('features');
                 const geom = ft.getGeometry();
                 const coord =
                     geom.getType() === 'Point'
@@ -466,7 +476,6 @@ const SimpleMap = React.forwardRef(
                             : geom.getClosestPoint(mapInstance.current.getView().getCenter());
 
                 if (features && features.length > 1) {
-                    // Cluster popup
                     const names = features.map((f) => f.get('name') || 'Unnamed').join(', ');
                     popupContentRef.current.innerHTML = `
                         <strong>Cluster (${features.length} points)</strong><br/>
@@ -482,33 +491,68 @@ const SimpleMap = React.forwardRef(
                         });
                     };
                 } else {
-                    // Single feature popup (point or polygon)
                     const singleFeature = features ? features[0] : ft;
-                    popupContentRef.current.innerHTML = `
-                        <strong>ID:</strong> ${singleFeature.getId()}<br/>
-                        <strong>İsim:</strong> ${singleFeature.get('name')}<br/>
-                        <strong>Tür:</strong> ${singleFeature.get('typeN') || 'Tüm Projeler'}<br/>
-                        <button class="del">🗑️ Sil</button>
-                    `;
-                    popupContentRef.current.querySelector('.del').onclick = async () => {
-                        if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
-                        try {
-                            await deleteLocation(singleFeature.getId());
-                            const source = singleFeature.getGeometry().getType() === 'Point' ? pointSource.current : polygonSource.current;
-                            source.removeFeature(singleFeature);
+                    const isUnsavedPolygon = geom.getType() === 'Polygon' && singleFeature === tempPolygonRef.current;
+
+                    if (isUnsavedPolygon) {
+                        popupContentRef.current.innerHTML = `
+                            <strong>İsim:</strong> Çizilen Poligon (Kaydedilmemiş)<br/>
+                            <button class="del-unsaved">🗑️ Sil</button>
+                        `;
+                        popupContentRef.current.querySelector('.del-unsaved').onclick = () => {
+                            polygonSource.current.removeFeature(singleFeature);
+                            tempPolygonRef.current = null;
                             overlayRef.current.setPosition(undefined);
-                        } catch (e) {
-                            console.error('Silme hatası:', e);
-                        }
-                    };
+                            onDrawingModeChange?.(false);
+                        };
+                    } else {
+                        popupContentRef.current.innerHTML = `
+                            <strong>ID:</strong> ${singleFeature.getId() || 'Bilinmiyor'}<br/>
+                            <strong>İsim:</strong> ${singleFeature.get('name') || 'İsimsiz'}<br/>
+                            <strong>Tür:</strong> ${singleFeature.get('typeN') || 'Tüm Projeler'}<br/>
+                            <button class="del">🗑️ Sil</button>
+                            <button class="undo">🗑️ Undo</button>
+                        `;
+                        popupContentRef.current.querySelector('.del').onclick = async () => {
+                            if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
+                            try {
+                                if (singleFeature.getId()) {
+                                    await deleteLocation(singleFeature.getId());
+                                }
+                                const source = singleFeature.getGeometry().getType() === 'Point' ? pointSource.current : polygonSource.current;
+                                source.removeFeature(singleFeature);
+                                overlayRef.current.setPosition(undefined);
+                            } catch (e) {
+                                console.error('Silme hatası:', e);
+                            }
+                        };
+                        popupContentRef.current.querySelector('.undo').onclick = async () => {
+                            if (!window.confirm('Geri almak istediğinize emin misiniz?')) return;
+                            try {
+                                const source = singleFeature.getGeometry().getType() === 'Point' ? pointSource.current : polygonSource.current;
+                                source.removeFeature(singleFeature);
+                                overlayRef.current.setPosition(undefined);
+                            } catch (e) {
+                                console.error('Silme hatası:', e);
+                            }
+                        };
+                    }
                 }
 
                 overlayRef.current.setPosition(coord);
             });
 
             const keyHandler = (e) => {
-                if (e.key === 'Escape' && drawRef.current) {
-                    drawRef.current.abortDrawing();
+                if (e.key === 'Escape') {
+                    if (drawRef.current) {
+                        drawRef.current.abortDrawing();
+                        mapInstance.current.removeInteraction(drawRef.current);
+                        drawRef.current = null;
+                    }
+                    if (tempPolygonRef.current) {
+                        polygonSource.current.removeFeature(tempPolygonRef.current);
+                        tempPolygonRef.current = null;
+                    }
                     if (onDrawingModeChange) {
                         onDrawingModeChange(false);
                     }
