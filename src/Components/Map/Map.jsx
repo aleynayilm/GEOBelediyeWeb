@@ -6,6 +6,7 @@ import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import Cluster from 'ol/source/Cluster';
 import Draw from 'ol/interaction/Draw';
 import Modify from 'ol/interaction/Modify';
 import Select from 'ol/interaction/Select';
@@ -25,8 +26,11 @@ const SimpleMap = React.forwardRef(
     ) => {
         const mapRef = useRef();
         const typeSelectRef = useRef();
-        const vectorSource = useRef(new VectorSource());
-        const vectorLayer = useRef(null);
+        const pointSource = useRef(new VectorSource()); // Source for points
+        const polygonSource = useRef(new VectorSource()); // Source for polygons
+        const clusterSource = useRef(new Cluster({ source: pointSource.current, distance: 40 }));
+        const pointLayer = useRef(null); // Layer for clustered points
+        const polygonLayer = useRef(null); // Layer for polygons
         const mapInstance = useRef(null);
         const drawRef = useRef(null);
         const overlayRef = useRef();
@@ -56,22 +60,15 @@ const SimpleMap = React.forwardRef(
                 console.error('Kaydedilecek poligon bulunamadı');
                 return false;
             }
-
             try {
                 const wkt = to4326WKT(tempPolygonRef.current);
-                console.log('Saving Polygon WKT:', wkt, 'Area:', area, 'minCoverCount:', minCoverCount);
-
                 await addData({ name, wkt, typeN: type, area });
-                console.log('Poligon başarıyla kaydedildi');
-
                 const optimizedPoints = await optimizePolygon(wkt, minCoverCount, name);
                 if (optimizedPoints) {
-                    console.log('Optimize edilmiş noktalar alındı:', optimizedPoints);
                     onOptimizationComplete?.(optimizedPoints);
                 } else {
                     onOptimizationComplete?.(null);
                 }
-
                 return wkt;
             } catch (e) {
                 console.error('Poligon kaydetme veya optimizasyon hatası:', e);
@@ -85,12 +82,8 @@ const SimpleMap = React.forwardRef(
                 console.error('Optimize edilecek poligon bulunamadı');
                 return null;
             }
-
             try {
-                console.log('Optimizing Polygon WKT:', wkt, 'with minCoverCount:', minCoverCount);
                 const response = await getOptimizedPoints(wkt, minCoverCount);
-                console.log('Optimization response:', response.data);
-
                 const wktFormatter = new WKT();
                 const validPoints = response.data
                     .map((point, index) => ({
@@ -116,15 +109,11 @@ const SimpleMap = React.forwardRef(
                         if (!seenCoordinates.has(coordKey)) {
                             seenCoordinates.add(coordKey);
                             uniquePoints.push(point);
-                        } else {
-                            console.warn(`Duplicate coordinates found for point: ${point.name}, WKT: ${point.wkt}`);
                         }
-                    } else {
-                        console.warn(`Invalid WKT format for point: ${point.wkt}`);
                     }
                 });
 
-                uniquePoints.forEach((point, index) => {
+                uniquePoints.forEach((point) => {
                     const feature = wktFormatter.readFeature(point.wkt, {
                         dataProjection: 'EPSG:4326',
                         featureProjection: 'EPSG:3857',
@@ -132,7 +121,7 @@ const SimpleMap = React.forwardRef(
                     feature.set('name', point.name);
                     feature.set('id', point.id);
                     feature.set('typeN', point.typeN);
-                    vectorSource.current.addFeature(feature);
+                    pointSource.current.addFeature(feature); // Add to pointSource
                 });
 
                 return uniquePoints;
@@ -147,15 +136,11 @@ const SimpleMap = React.forwardRef(
                 console.error('No points to save');
                 throw new Error('No points to save');
             }
-
             try {
                 const data = points
                     .map((point, index) => {
                         const wktMatch = point.wkt?.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
-                        if (!wktMatch) {
-                            console.warn(`Invalid WKT for point ${index}: ${point.wkt}`);
-                            return null;
-                        }
+                        if (!wktMatch) return null;
                         const lon = Number(wktMatch[1]).toFixed(6);
                         const lat = Number(wktMatch[2]).toFixed(6);
                         return {
@@ -173,8 +158,6 @@ const SimpleMap = React.forwardRef(
                     if (!seenCoordinates.has(coordKey)) {
                         seenCoordinates.add(coordKey);
                         uniquePoints.push(point);
-                    } else {
-                        console.warn(`Duplicate coordinates found for point: ${point.name}, WKT: ${point.wkt}`);
                     }
                 });
 
@@ -183,17 +166,12 @@ const SimpleMap = React.forwardRef(
                     throw new Error('No valid unique points to save');
                 }
 
-                console.log('Sending to AddRange:', uniquePoints);
                 const response = await addRange(uniquePoints);
-                console.log('AddRange response:', response.data);
                 await loadFeaturesFromAPI();
                 onDataUpdated?.();
                 return response.data;
             } catch (e) {
                 console.error('Error saving points:', e);
-                if (e.response) {
-                    console.error('Backend error response:', e.response.data);
-                }
                 throw e;
             }
         };
@@ -202,8 +180,7 @@ const SimpleMap = React.forwardRef(
             if (modifyRef.current) {
                 mapInstance.current.removeInteraction(modifyRef.current);
             }
-
-            const modify = new Modify({ source: vectorSource.current });
+            const modify = new Modify({ source: pointSource.current }); // Modify points only
             mapInstance.current.addInteraction(modify);
             modifyRef.current = modify;
 
@@ -231,42 +208,28 @@ const SimpleMap = React.forwardRef(
             enablePointEditing,
             getPolygonArea,
             zoomToProject: (projectId) => {
-                const allFeatures = vectorSource.current.getFeatures();
+                const allFeatures = [...pointSource.current.getFeatures(), ...polygonSource.current.getFeatures()];
                 const targetFeature = allFeatures.find((f) => f.getId() === projectId);
-        
                 if (!targetFeature) {
                     console.warn('Proje bulunamadı:', projectId);
                     return;
                 }
-        
-                // Diğer projeleri gizle
                 allFeatures.forEach((f) => {
                     f.setStyle(f.getId() === projectId ? styleFunction(f) : null);
                 });
-        
                 const geometry = targetFeature.getGeometry();
-                const extent = geometry.getType() === 'Point'
-                    ? geometry.getExtent()
-                    : geometry.getExtent();
-                
+                const extent = geometry.getType() === 'Point' ? geometry.getExtent() : geometry.getExtent();
                 mapInstance.current.getView().fit(extent, {
                     padding: [50, 50, 50, 50],
                     maxZoom: 17,
                     duration: 800,
                 });
             },
-            clearProjects,
+            clearProjects: () => {
+                pointSource.current.clear();
+                polygonSource.current.clear();
+            },
         }));
-
-        const clearProjects = () => {
-            const source = vectorLayer.current.getSource();
-            const features = source.getFeatures();
-            features.forEach((feature) => {
-              if (feature.get('typeN')) {
-                source.removeFeature(feature);
-              }
-            });
-          };
 
         const isLikelyEPSG3857 = (wktString) => {
             const match = wktString.match(/[-]?\d+(?:\.\d+)?/);
@@ -275,31 +238,31 @@ const SimpleMap = React.forwardRef(
 
         const to4326WKT = (feature) => {
             const geometry = feature.getGeometry();
+            if (!geometry) return null;
             if (geometry.getType() === 'Polygon') {
                 const coordinates = geometry.getCoordinates()[0];
                 const wktCoords = coordinates
                     .map((coord) => {
                         const [lon, lat] = transform(coord, 'EPSG:3857', 'EPSG:4326');
-                        return `${lon} ${lat}`;
+                        return `${lon.toFixed(6)} ${lat.toFixed(6)}`;
                     })
                     .join(', ');
                 return `POLYGON((${wktCoords}))`;
             } else if (geometry.getType() === 'Point') {
                 const [lon, lat] = transform(geometry.getCoordinates(), 'EPSG:3857', 'EPSG:4326');
-                return `POINT(${lon} ${lat})`;
+                return `POINT(${lon.toFixed(6)} ${lat.toFixed(6)})`;
             }
-            return new WKT().writeFeature(feature, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857',
-            });
+            return null;
         };
 
         const styleFunction = useCallback(
             (feature) => {
+                const features = feature.get('features'); // Cluster features for points
                 const geomType = feature.getGeometry().getType();
-                const featureTypeN = feature.get('typeN') || 'Tüm Projeler';
+                const featureTypeN = features ? features[0]?.get('typeN') || 'Tüm Projeler' : feature.get('typeN') || 'Tüm Projeler';
+
                 if (selectedFilter !== 'Tüm Projeler' && featureTypeN !== selectedFilter) {
-                    return null; // Filtrelenmiş özellikleri gizle
+                    return null;
                 }
 
                 const iconUrl = customIconUrls[featureTypeN] || customIconUrls['Tüm Projeler'];
@@ -313,6 +276,25 @@ const SimpleMap = React.forwardRef(
                 const color = themeColors[featureTypeN] || '#888';
 
                 if (geomType === 'Point') {
+                    if (features && features.length > 1) {
+                        // Cluster style with icon
+                        const size = features.length;
+                        return new Style({
+                            image: new Icon({
+                                src: iconUrl, // Use the same icon as individual points
+                                scale: 0.08, // Slightly larger for clusters
+                                anchor: [0.5, 0.9],
+                            }),
+                            text: new Text({
+                                text: size.toString(), // Optional: Show number of points
+                                font: 'bold 12px Arial',
+                                fill: new Fill({ color: '#fff' }),
+                                stroke: new Stroke({ color: '#000', width: 2 }),
+                                offsetY: -25, // Adjust position above icon
+                            }),
+                        });
+                    }
+                    // Single point style
                     return new Style({
                         image: new Icon({
                             src: iconUrl,
@@ -320,7 +302,7 @@ const SimpleMap = React.forwardRef(
                             anchor: [0.5, 0.9],
                         }),
                         text: new Text({
-                            text: feature.get('name') || '',
+                            text: feature.get('name') || features?.[0]?.get('name') || '',
                             font: 'bold 12px Arial',
                             fill: new Fill({ color: '#000' }),
                             stroke: new Stroke({ color: '#fff', width: 2 }),
@@ -349,7 +331,8 @@ const SimpleMap = React.forwardRef(
         );
 
         const loadFeaturesFromAPI = async () => {
-            vectorSource.current.clear();
+            pointSource.current.clear();
+            polygonSource.current.clear();
             try {
                 const res = await getLocations();
                 const records = res.data ?? res;
@@ -366,16 +349,15 @@ const SimpleMap = React.forwardRef(
                         featureProjection: 'EPSG:3857',
                     });
                     const geomType = feature.getGeometry().getType();
-                    if (geomType === 'Point' || geomType === 'Polygon') {
-                        feature.setId(item.id);
-                        feature.set('name', item.name);
-                        feature.set('typeN', item.typeN || 'Tüm Projeler');
-                        vectorSource.current.addFeature(feature);
+                    feature.setId(item.id);
+                    feature.set('name', item.name);
+                    feature.set('typeN', item.typeN || 'Tüm Projeler');
+                    if (geomType === 'Point') {
+                        pointSource.current.addFeature(feature); // Add points to pointSource
+                    } else if (geomType === 'Polygon') {
+                        polygonSource.current.addFeature(feature); // Add polygons to polygonSource
                     }
                 });
-
-                const extent = vectorSource.current.getExtent();
-              
             } catch (err) {
                 console.error('Veri yüklenirken hata:', err);
             }
@@ -387,8 +369,9 @@ const SimpleMap = React.forwardRef(
             const drawType = typeSelectRef.current.value;
             if (drawType === 'None') return;
 
+            const source = drawType === 'Point' ? pointSource.current : polygonSource.current;
             const draw = new Draw({
-                source: vectorSource.current,
+                source,
                 type: drawType,
                 freehand: false,
             });
@@ -407,7 +390,7 @@ const SimpleMap = React.forwardRef(
                     const wkt = to4326WKT(f);
                     const name = prompt('Bu objeye isim verin:');
                     if (!name) {
-                        setTimeout(() => vectorSource.current.removeFeature(f), 0);
+                        setTimeout(() => pointSource.current.removeFeature(f), 0);
                         return;
                     }
                     try {
@@ -416,7 +399,7 @@ const SimpleMap = React.forwardRef(
                         onDataUpdated?.();
                     } catch (e) {
                         console.error('Kaydetme hatası:', e);
-                        setTimeout(() => vectorSource.current.removeFeature(f), 0);
+                        setTimeout(() => pointSource.current.removeFeature(f), 0);
                     }
                 }
             });
@@ -426,14 +409,22 @@ const SimpleMap = React.forwardRef(
         };
 
         useEffect(() => {
-            vectorLayer.current = new VectorLayer({
-                source: vectorSource.current,
+            pointLayer.current = new VectorLayer({
+                source: clusterSource.current,
+                style: styleFunction,
+            });
+            polygonLayer.current = new VectorLayer({
+                source: polygonSource.current,
                 style: styleFunction,
             });
 
             mapInstance.current = new Map({
                 target: mapRef.current,
-                layers: [new TileLayer({ source: new OSM() }), vectorLayer.current],
+                layers: [
+                    new TileLayer({ source: new OSM() }),
+                    polygonLayer.current, // Add polygon layer first (background)
+                    pointLayer.current,   // Add point layer on top
+                ],
                 view: new View({
                     center: fromLonLat([34, 39]),
                     zoom: 6,
@@ -454,7 +445,9 @@ const SimpleMap = React.forwardRef(
             });
             mapInstance.current.addOverlay(overlayRef.current);
 
-            const select = new Select();
+            const select = new Select({
+                layers: [pointLayer.current, polygonLayer.current], // Select from both layers
+            });
             mapInstance.current.addInteraction(select);
             select.on('select', (evt) => {
                 const ft = evt.selected[0];
@@ -463,6 +456,7 @@ const SimpleMap = React.forwardRef(
                     return;
                 }
 
+                const features = ft.get('features'); // Check if it's a cluster (points only)
                 const geom = ft.getGeometry();
                 const coord =
                     geom.getType() === 'Point'
@@ -471,23 +465,43 @@ const SimpleMap = React.forwardRef(
                             ? geom.getInteriorPoint().getCoordinates()
                             : geom.getClosestPoint(mapInstance.current.getView().getCenter());
 
-                popupContentRef.current.innerHTML = `
-          <strong>ID:</strong> ${ft.getId()}<br/>
-          <strong>İsim:</strong> ${ft.get('name')}<br/>
-          <strong>Tür:</strong> ${ft.get('typeN') || 'Tüm Projeler'}<br/>
-          <button class="del">🗑️ Sil</button>
-        `;
-
-                popupContentRef.current.querySelector('.del').onclick = async () => {
-                    if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
-                    try {
-                        await deleteLocation(ft.getId());
-                        vectorSource.current.removeFeature(ft);
-                        overlayRef.current.setPosition(undefined);
-                    } catch (e) {
-                        console.error('Silme hatası:', e);
-                    }
-                };
+                if (features && features.length > 1) {
+                    // Cluster popup
+                    const names = features.map((f) => f.get('name') || 'Unnamed').join(', ');
+                    popupContentRef.current.innerHTML = `
+                        <strong>Cluster (${features.length} points)</strong><br/>
+                        <strong>Names:</strong> ${names}<br/>
+                        <button class="zoom-cluster">Zoom to Cluster</button>
+                    `;
+                    popupContentRef.current.querySelector('.zoom-cluster').onclick = () => {
+                        const extent = ft.getGeometry().getExtent();
+                        mapInstance.current.getView().fit(extent, {
+                            padding: [50, 50, 50, 50],
+                            maxZoom: 18,
+                            duration: 800,
+                        });
+                    };
+                } else {
+                    // Single feature popup (point or polygon)
+                    const singleFeature = features ? features[0] : ft;
+                    popupContentRef.current.innerHTML = `
+                        <strong>ID:</strong> ${singleFeature.getId()}<br/>
+                        <strong>İsim:</strong> ${singleFeature.get('name')}<br/>
+                        <strong>Tür:</strong> ${singleFeature.get('typeN') || 'Tüm Projeler'}<br/>
+                        <button class="del">🗑️ Sil</button>
+                    `;
+                    popupContentRef.current.querySelector('.del').onclick = async () => {
+                        if (!window.confirm('Silmek istediğinize emin misiniz?')) return;
+                        try {
+                            await deleteLocation(singleFeature.getId());
+                            const source = singleFeature.getGeometry().getType() === 'Point' ? pointSource.current : polygonSource.current;
+                            source.removeFeature(singleFeature);
+                            overlayRef.current.setPosition(undefined);
+                        } catch (e) {
+                            console.error('Silme hatası:', e);
+                        }
+                    };
+                }
 
                 overlayRef.current.setPosition(coord);
             });
@@ -523,8 +537,9 @@ const SimpleMap = React.forwardRef(
         }, [drawingMode]);
 
         useEffect(() => {
-            if (vectorLayer.current) {
-                vectorLayer.current.setStyle(styleFunction);
+            if (pointLayer.current && polygonLayer.current) {
+                pointLayer.current.setStyle(styleFunction);
+                polygonLayer.current.setStyle(styleFunction);
             }
         }, [selectedFilter, styleFunction]);
 
