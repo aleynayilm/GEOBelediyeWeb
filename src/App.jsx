@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import SimpleMap from './Components/Map/Map';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import WasteManagementPage from './Pages/WasteManagementPage';
+import ReportsPage from './Pages/ReportsPage';
 import SideBar from './Components/SideBar/SideBar';
 import { AnalysisPanel } from './Components/Panel/Panel';
 import SimulationLoadingCard from './Components/Panel/SimulationLoadingCard';
@@ -29,8 +30,9 @@ export default function App() {
     const mapRef = useRef();
     const location = useLocation();
     const decodedPath = decodeURIComponent(location.pathname);
-    const hideNavbarOnRoutePrefix = '/analiz/';
-    const shouldShowNavbar = !decodedPath.startsWith(hideNavbarOnRoutePrefix);
+    const hideNavbarOnRoutePrefixes = ['/analiz/', '/raporlar'];
+
+    const shouldShowNavbar = !hideNavbarOnRoutePrefixes.some((prefix) => decodedPath.startsWith(prefix));
 
     const handleSavePolygon = async (data) => {
         if (!mapRef.current) {
@@ -215,6 +217,7 @@ export default function App() {
                     path="/analiz/:kategori"
                     element={<WasteManagementPage />}
                 />
+                <Route path="/raporlar" element={<ReportsPage />} />
             </Routes>
 
             {showPanel && (
@@ -225,6 +228,7 @@ export default function App() {
                                 optimizationStatus={optimizationStatus}
                                 optimizedPoints={optimizedPoints}
                                 onComplete={handleSimulationComplete}
+                                simulationType={selectedFilter} // Add this prop
                             />
                         ) : (
                             <AnalysisPanel

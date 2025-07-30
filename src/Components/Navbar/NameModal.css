@@ -4,102 +4,174 @@
   left: 0;
   width: 100%;
   height: calc(100vh - 70px);
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Subtle backdrop for better contrast */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 3001;
+  animation: fadeIn 0.3s ease-in-out;
 }
+
+.modal-container {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  /* Slightly smaller radius for a modern look */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  /* Softer shadow */
+  width: 100%;
+  max-width: 400px;
+  /* Fixed max-width for consistency */
+  min-width: 300px;
+  box-sizing: border-box;
+  text-align: left;
+  transform: translateY(0);
+  animation: slideUp 0.3s ease-in-out;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Consistent spacing between fields */
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-field label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.modal-field input,
+.modal-field select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  /* Tailwind's gray-300 */
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+.modal-field input:focus,
+.modal-field select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  /* Subtle focus ring */
+}
+
+.modal-field input[readonly] {
+  background-color: #f3f4f6;
+  /* Tailwind's gray-100 */
+  cursor: not-allowed;
+}
+
+.modal-field select {
+  appearance: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background-size: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.cancel-btn,
+.save-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cancel-btn {
+  background-color: #e5e7eb;
+  /* Tailwind's gray-200 */
+  color: #374151;
+  /* Tailwind's gray-700 */
+}
+
+.cancel-btn:hover {
+  background-color: #d1d5db;
+  /* Tailwind's gray-300 */
+  transform: translateY(-1px);
+}
+
+.save-btn {
+  background-color: #007bff;
+  color: #ffffff;
+}
+
+.save-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
   .modal-container {
-    background-color: white;
-    padding: 24px 30px;
-    border-radius: 32px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    width: 30%;
-    box-sizing: border-box;
-    text-align: center;
-    margin-bottom: 16px;
-    font-weight: 100;
-    font-size: 1.4rem;
-    min-width: 30vw;
+    max-width: 90%;
+    padding: 16px;
   }
-  
-  .modal-container input[type="text"] {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 1rem;
-    border: 1.5px solid #ccc;
-    border-radius: 6px;
-    outline-offset: 2px;
-    transition: border-color 0.3s ease;
-    box-sizing: border-box;
+
+  .modal-title {
+    font-size: 1.25rem;
   }
-  
-  .modal-container input[type="text"]:focus {
-    border-color: #007bff;
-    outline: none;
+
+  .modal-field input,
+  .modal-field select {
+    font-size: 0.9rem;
   }
-  
-  .modal-actions {
-    margin-top: 24px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-  
+
   .cancel-btn,
   .save-btn {
-    padding: 10px 22px;
-    font-size: 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    border: none;
-    transition: background-color 0.3s ease;
+    padding: 8px 16px;
+    font-size: 0.9rem;
   }
-  
-  .cancel-btn {
-    background-color: #e0e0e0;
-    color: #555;
-  }
-  
-  .cancel-btn:hover {
-    background-color: #cfcfcf;
-  }
-  
-  .save-btn {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .save-btn:hover {
-    background-color: #0056b3;
-  }
-  
-  .modal-field {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 1rem;
-  }
-  
-  .modal-field label {
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    font-size: 1rem;
-  }
-  
-  .modal-field input {
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-  }
-  select {
-    width: 100%;
-    padding: 8px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px; /* Aynı köşe yumuşaklığı */
-    box-sizing: border-box;
-    margin-top: 4px;
-    margin-bottom: 12px;
-  }
+}

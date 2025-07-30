@@ -2,17 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import '../../Css/AnalysisPanel.css';
 
 export function AnalysisPanel({
-                                  minCoverCount,
-                                  capacityLtPerMin,
-                                  points,
-                                  onMapClick,
-                                  onEditClick,
-                                  onEditMinCap,
-                                  onSave,
-                                  onSimulate,
-                                  className = '',
-                                  selectedFilter,
-                              }) {
+    minCoverCount,
+    capacityLtPerMin,
+    points,
+    onMapClick,
+    onEditClick,
+    onEditMinCap,
+    onSave,
+    onSimulate,
+    className = '',
+    selectedFilter,
+}) {
     const [entered, setEntered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [tempCoverCount, setTempCoverCount] = useState(minCoverCount);
@@ -75,40 +75,40 @@ export function AnalysisPanel({
         () => (
             <table className="ap-table">
                 <thead>
-                <tr>
-                    <th>Nokta Adı</th>
-                    <th>Konum</th>
-                    <th>{selectedFilter === 'Atık Yönetimi' ? 'Tahmini Atık (kg)' : 'Tahmini Su Tutma (lt)'}</th>
-                    <th>Mahalle İsmi</th>
-                    <th>Tür</th>
-                </tr>
+                    <tr>
+                        <th>Nokta Adı</th>
+                        <th>Konum</th>
+                        <th>{selectedFilter === 'Atık Yönetimi' ? 'Tahmini Atık (kg)' : 'Tahmini Su Tutma (lt)'}</th>
+                        <th>Mahalle İsmi</th>
+                        <th>Tür</th>
+                    </tr>
                 </thead>
                 <tbody>
-                {points.map((p, index) => {
-                    let lon = 0,
-                        lat = 0;
-                    if (p.wkt) {
-                        const wktMatch = p.wkt.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
-                        if (wktMatch) {
-                            lon = Number(wktMatch[1]).toFixed(4);
-                            lat = Number(wktMatch[2]).toFixed(4);
-                        } else {
-                            console.warn(`Invalid WKT format for point: ${p.wkt}`);
+                    {points.map((p, index) => {
+                        let lon = 0,
+                            lat = 0;
+                        if (p.wkt) {
+                            const wktMatch = p.wkt.match(/POINT\s*\(\s*([-]?\d*\.?\d+)\s+([-]?\d*\.?\d+)\s*\)/);
+                            if (wktMatch) {
+                                lon = Number(wktMatch[1]).toFixed(4);
+                                lat = Number(wktMatch[2]).toFixed(4);
+                            } else {
+                                console.warn(`Invalid WKT format for point: ${p.wkt}`);
+                            }
+                        } else if (p.lon && p.lat) {
+                            lon = Number(p.lon).toFixed(4);
+                            lat = Number(p.lat).toFixed(4);
                         }
-                    } else if (p.lon && p.lat) {
-                        lon = Number(p.lon).toFixed(4);
-                        lat = Number(p.lat).toFixed(4);
-                    }
-                    return (
-                        <tr key={p.id && p.id !== 0 ? p.id : `point-${index}`}>
-                            <td>{p.name || `Nokta-${index + 1}`}</td>
-                            <td>{lat === '0.0000' && lon === '0.0000' ? 'N/A' : `${lat}, ${lon}`}</td>
-                            <td>{p.waterLt || p.totalWastePerDay || 'N/A'}</td>
-                            <td>{p.mahalle || 'N/A'}</td>
-                            <td>{p.typeN || selectedFilter || 'Bilinmiyor'}</td>
-                        </tr>
-                    );
-                })}
+                        return (
+                            <tr key={p.id && p.id !== 0 ? p.id : `point-${index}`}>
+                                <td>{p.name || `Nokta-${index + 1}`}</td>
+                                <td>{lat === '0.0000' && lon === '0.0000' ? 'N/A' : `${lat}, ${lon}`}</td>
+                                <td>{p.waterLt || p.totalWastePerDay || 'N/A'}</td>
+                                <td>{p.mahalle || 'N/A'}</td>
+                                <td>{p.typeN || selectedFilter || 'Bilinmiyor'}</td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         ),
@@ -136,27 +136,35 @@ export function AnalysisPanel({
             <div className="ap-metrics">
                 <div className="ap-metric-card ap-metric-orange">
                     <div className="ap-metric-body">
-                        <span className="ap-metric-label">Önerilen Minimum Kapak Sayısı</span>
+                        <span className="ap-metric-label">
+                            {selectedFilter === 'Atık Yönetimi'
+                                ? 'Önerilen Minimum Konteynır Sayısı'
+                                : 'Önerilen Minimum Kapak Sayısı'}
+                        </span>
                         <span className={`ap-metric-value ${isEditing ? 'editing' : ''}`}>
-              {isEditing ? (
-                  <input
-                      type="number"
-                      min="1"
-                      className="ap-metric-input"
-                      value={tempCoverCount}
-                      onChange={(e) => setTempCoverCount(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      autoFocus
-                  />
-              ) : (
-                  tempCoverCount
-              )}
-            </span>
+                            {isEditing ? (
+                                <input
+                                    type="number"
+                                    min="1"
+                                    className="ap-metric-input"
+                                    value={tempCoverCount}
+                                    onChange={(e) => setTempCoverCount(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    autoFocus
+                                />
+                            ) : (
+                                tempCoverCount
+                            )}
+                        </span>
                     </div>
                     <button
                         type="button"
                         className="ap-metric-edit"
-                        aria-label="Minimum kapak sayısını düzenle"
+                        aria-label={
+                            selectedFilter === 'Atık Yönetimi'
+                                ? 'Minimum konteynır sayısını düzenle'
+                                : 'Minimum kapak sayısını düzenle'
+                        }
                         onClick={handleEditClick}
                     >
                         <PencilIcon />
@@ -165,11 +173,13 @@ export function AnalysisPanel({
 
                 <div className="ap-metric-card ap-metric-blue">
                     <div className="ap-metric-body">
-                        <span className="ap-metric-label">Altyapı Kapasitesi</span>
+                        <span className="ap-metric-label">
+                            {selectedFilter === 'Atık Yönetimi' ? 'Atık Kapasitesi' : 'Altyapı Kapasitesi'}
+                        </span>
                         <span className="ap-metric-value">
-              {capacityLtPerMin.toLocaleString('tr-TR')}{' '}
+                            {capacityLtPerMin.toLocaleString('tr-TR')}{' '}
                             <span className="ap-metric-unit">{capacityUnit}</span>
-            </span>
+                        </span>
                     </div>
                 </div>
             </div>

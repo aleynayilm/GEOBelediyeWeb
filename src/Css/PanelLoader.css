@@ -1,18 +1,9 @@
-/* From Uiverse.io by mrhyddenn  — scaled + centered tweak */
+/* From Uiverse.io by mrhyddenn & vinodjangid07 — scaled + centered tweak */
 
 /* === Global scale knob (small bump ~20%) === */
 :root {
     --ap-loader-scale: 1.2;
-    --ap-fall-distance: 100px; /* istersen 120px yap */
-}
-
-/* Loader pill */
-.loader {
-    position: relative;
-    width: 110px;
-    height: 30px;
-    background: #FF962FFF;
-    border-radius: 100px;
+    --ap-fall-distance: 100px;
 }
 
 /* Center + scale everything inside the loading card */
@@ -20,10 +11,9 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    /* translate shorthanda tarayıcı farkları vardı; transform kullan */
     transform: translate(-50%, -50%) scale(var(--ap-loader-scale));
     transform-origin: center;
-    display: block; /* flex değil */
+    display: block;
 }
 
 /* Simülasyon animasyonu için merkez konumlandırma */
@@ -36,10 +26,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 30px; /* Elemanlar arası mesafeyi artır */
+    gap: 30px;
     width: 100%;
     text-align: center;
-    z-index: 10; /* Panelin üstünde görünsün */
+    z-index: 10;
 }
 
 /* Daktilo yazı stili */
@@ -56,7 +46,7 @@
 }
 
 .ap-typewriter.ap-success {
-    color: #22c55e; /* Başarılı mesaj için yeşil */
+    color: #22c55e;
 }
 
 .ap-typewriter-text {
@@ -71,11 +61,19 @@
 
 /* Cursor yanıp sönme animasyonu */
 @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
 }
 
-/* *** YENİ: Başarı konteyneri *** */
+/* Başarı konteyneri */
 .ap-success-container {
     display: flex;
     flex-direction: column;
@@ -83,7 +81,7 @@
     gap: 20px;
 }
 
-/* *** YENİ: Tik animasyonu stilleri *** */
+/* Tik animasyonu stilleri */
 .ap-checkmark-container {
     display: flex;
     justify-content: center;
@@ -118,24 +116,56 @@
     animation: ap-stroke-check 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
 }
 
-/* *** YENİ: Tik animasyon keyframes *** */
+/* Tik animasyon keyframes */
 @keyframes ap-checkmark-fade-in {
-    0% { opacity: 0; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1); }
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes ap-stroke-circle {
-    0% { stroke-dashoffset: 166; }
-    100% { stroke-dashoffset: 0; }
+    0% {
+        stroke-dashoffset: 166;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
 }
 
 @keyframes ap-stroke-check {
-    0% { stroke-dashoffset: 48; }
-    100% { stroke-dashoffset: 0; }
+    0% {
+        stroke-dashoffset: 48;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
 }
 
-/* Orange ball + shadow bump remains pixel-based (scaled by parent) */
-.loader::before {
+/* Loader base styles for both animations */
+.loader {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Rain animation specific styles */
+.rain-loader {
+    width: 110px;
+    height: 30px;
+    background: #FF962FFF;
+    border-radius: 100px;
+}
+
+.rain-loader::before {
     content: '';
     position: absolute;
     top: -20px;
@@ -147,19 +177,17 @@
     box-shadow: 40px 0 0 20px #FF7D00FF;
 }
 
-/* Snow container — spread flakes across width */
 .snow {
-    position: absolute; /* kapsayıcıya tam otur */
+    position: absolute;
     inset: 0;
     display: flex;
     justify-content: space-evenly;
     align-items: flex-start;
-    flex-wrap: wrap;          /* fazla flake varsa sonraki satırlara */
+    flex-wrap: wrap;
     pointer-events: none;
     z-index: 1;
 }
 
-/* Snow flakes */
 .snow span {
     display: block;
     width: 3px;
@@ -168,20 +196,141 @@
     margin: 0 2px;
     border-radius: 50%;
     animation: snowing 5s linear infinite;
-    /* Fallback ekle: var(--i,1) */
     animation-duration: calc(15s / (var(--i, 1)));
     transform-origin: bottom;
 }
 
-/* Fall animation (distance variable) */
 @keyframes snowing {
     0% {
         transform: translateY(0px);
     }
+
     70% {
         transform: translateY(var(--ap-fall-distance)) scale(1);
     }
+
     100% {
         transform: translateY(var(--ap-fall-distance)) scale(0);
+    }
+}
+
+/* Truck animation specific styles */
+.truck-loader {
+    width: 150px;
+    /* Reduced from 200px to fit better */
+    height: 75px;
+    /* Reduced from 100px */
+}
+
+.truckWrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    align-items: center;
+    justify-content: flex-end;
+    overflow-x: hidden;
+}
+
+.truckBody {
+    width: 100px;
+    /* Reduced from 130px */
+    height: fit-content;
+    margin-bottom: 4px;
+    /* Adjusted from 6px */
+    animation: motion 1s linear infinite;
+}
+
+@keyframes motion {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(2px);
+        /* Adjusted from 3px */
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.truckTires {
+    width: 100px;
+    /* Match truckBody */
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 8px 0px 12px;
+    /* Adjusted from 10px, 15px */
+    position: absolute;
+    bottom: 0;
+}
+
+.truckTires svg {
+    width: 18px;
+    /* Reduced from 24px */
+}
+
+.road {
+    width: 100%;
+    height: 1.2px;
+    /* Adjusted from 1.5px */
+    background-color: #282828;
+    position: relative;
+    bottom: 0;
+    align-self: flex-end;
+    border-radius: 2px;
+    /* Adjusted from 3px */
+}
+
+.road::before {
+    content: "";
+    position: absolute;
+    width: 15px;
+    /* Adjusted from 20px */
+    height: 100%;
+    background-color: #282828;
+    right: -50%;
+    border-radius: 2px;
+    animation: roadAnimation 1.4s linear infinite;
+    border-left: 8px solid white;
+    /* Adjusted from 10px */
+}
+
+.road::after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    /* Adjusted from 10px */
+    height: 100%;
+    background-color: #282828;
+    right: -65%;
+    border-radius: 2px;
+    animation: roadAnimation 1.4s linear infinite;
+    border-left: 3px solid white;
+    /* Adjusted from 4px */
+}
+
+.lampPost {
+    position: absolute;
+    bottom: 0;
+    right: -90%;
+    height: 67px;
+    /* Reduced from 90px */
+    animation: roadAnimation 1.4s linear infinite;
+}
+
+@keyframes roadAnimation {
+    0% {
+        transform: translateX(0px);
+    }
+
+    100% {
+        transform: translateX(-260px);
+        /* Adjusted from -350px to match smaller size */
     }
 }

@@ -20,7 +20,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
     { icon: Home, label: 'Ana Sayfa', href: '/' },
     { icon: Map, label: 'Projeler', href: '#' },
     { icon: BarChart3, label: 'Analiz Sonuçları', href: '#' },
-    { icon: FileText, label: 'Raporlar', href: '#' },
+    { icon: FileText, label: 'Raporlar', href: '/raporlar' },
     { icon: Wrench, label: 'Modifikasyonlar', href: '#' },
     { icon: Settings, label: 'Ayarlar', href: '#' },
   ];
@@ -91,49 +91,52 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
               gap: '8px',
             }}
           >
-            {/* Ana Sayfa, Raporlar, Modifikasyonlar, Ayarlar */}
-            {menuItems.map((item, index) => {
-              if (item.label === 'Projeler' || item.label === 'Analiz Sonuçları') return null;
-              return (
-                <li key={index}>
-                  <a
-                    href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (item.label === 'Ana Sayfa') {
-                        navigate('/');
-                      }
-                      toggleSidebar();
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px 16px',
-                      color: '#1f2a44',
-                      textDecoration: 'none',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      fontWeight: '500',
-                      transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.1s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#f3f4f6';
-                      e.target.style.color = '#3b82f6';
-                      e.target.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.color = '#1f2a44';
-                      e.target.style.transform = 'translateX(0)';
-                    }}
-                  >
-                    <item.icon size={20} strokeWidth={2} />
-                    <span>{item.label}</span>
-                  </a>
-                </li>
-              );
-            })}
+            {/* Ana Sayfa, Raporlar, Projeler, Analiz Sonuçları */}
+            {menuItems
+              .filter(item => item.label !== 'Ayarlar' && item.label !== 'Modifikasyonlar')
+              .map((item, index) => {
+                if (item.label === 'Projeler' || item.label === 'Analiz Sonuçları') return null;
+
+                return (
+                  <li key={index}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (item.label === 'Ana Sayfa' || item.label === 'Raporlar') {
+                          navigate(item.href);
+                        }
+                        toggleSidebar();
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        color: '#1f2a44',
+                        textDecoration: 'none',
+                        borderRadius: '10px',
+                        fontSize: '15px',
+                        fontWeight: '500',
+                        transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.1s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#f3f4f6';
+                        e.target.style.color = '#3b82f6';
+                        e.target.style.transform = 'translateX(4px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'transparent';
+                        e.target.style.color = '#1f2a44';
+                        e.target.style.transform = 'translateX(0)';
+                      }}
+                    >
+                      <item.icon size={20} strokeWidth={2} />
+                      <span>{item.label}</span>
+                    </a>
+                  </li>
+                );
+              })}
 
             {/* Projeler */}
             <li>
@@ -290,6 +293,47 @@ const SideBar = ({ isSidebarOpen, toggleSidebar, mapRef }) => {
                 </ul>
               )}
             </li>
+
+            {/* Ayarlar ve Modifikasyonlar */}
+            {menuItems
+              .filter(item => item.label === 'Ayarlar' || item.label === 'Modifikasyonlar')
+              .map((item, index) => (
+                <li key={index}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(item.href);
+                      toggleSidebar();
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      color: '#1f2a44',
+                      textDecoration: 'none',
+                      borderRadius: '10px',
+                      fontSize: '15px',
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.1s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#f3f4f6';
+                      e.target.style.color = '#3b82f6';
+                      e.target.style.transform = 'translateX(4px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'transparent';
+                      e.target.style.color = '#1f2a44';
+                      e.target.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <item.icon size={20} strokeWidth={2} />
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              ))}
           </ul>
         </nav>
 
