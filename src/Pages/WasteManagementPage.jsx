@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SideBar from '../Components/SideBar/SideBar';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine
+    BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import Select from 'react-select';
 import { Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -10,7 +10,7 @@ import { getAllProjects } from '../services/projectService';
 
 const CONTAINER_CAPACITY_KG = 96;
 
-// Accordion Component for expandable POLYGON and POINT list
+// Accordion Component (unchanged)
 const ProjectDetailsAccordion = ({ polygonProjects, pointProjects }) => {
     const [openProjectId, setOpenProjectId] = useState(null);
 
@@ -97,7 +97,6 @@ const ProjectDetailsAccordion = ({ polygonProjects, pointProjects }) => {
     );
 };
 
-// minCoverCount ve capacityLtPerMin props olarak alınıyor
 const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [projects, setProjects] = useState([]);
@@ -105,24 +104,21 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
     const [allProjects, setAllProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedProjects, setSelectedProjects] = useState([]); // Seçilen projeler
+    const [selectedProjects, setSelectedProjects] = useState([]);
     const mapRef = useRef();
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
-    // Renk skalası
     const colors = ['#8884d8', '#82ca9d', '#ff7300', '#ffbb28', '#00c49f', '#ff8b94', '#a6ce39', '#d4a5a5'];
 
-    // Projeleri çekme
     useEffect(() => {
         const fetchProjects = async () => {
             try {
                 const response = await getAllProjects();
                 console.log('Tüm projeler:', response);
 
-                // POLYGON projelerini filtrele
                 const polygonProjects = response.filter(project => {
                     const isValid = project.wkt &&
                         project.wkt.startsWith('POLYGON') &&
@@ -136,7 +132,6 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
                     return isValid;
                 });
 
-                // POINT projelerini filtrele
                 const points = response.filter(project => {
                     const isValid = project.wkt &&
                         project.wkt.startsWith('POINT') &&
@@ -150,7 +145,6 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
                     return isValid;
                 });
 
-                // Her POLYGON için ilgili POINT'leri say ve veriyi hazırla
                 const projectData = polygonProjects.map(project => {
                     const pointCount = points.filter(point =>
                         point.name && point.name.startsWith(`${project.name}-`)
@@ -177,13 +171,11 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
         fetchProjects();
     }, []);
 
-    // react-select için proje seçenekleri
     const projectOptions = projects.map(project => ({
         value: project.name,
         label: project.name
     }));
 
-    // Grafik için veri hazırlama
     const chartData = [
         {
             metric: 'Atık Kapasitesi',
@@ -205,7 +197,6 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
         }
     ];
 
-    // Ortalama atık kapasitesi
     const averageWasteCapacity = projects
         .filter(project => selectedProjects.length === 0 || selectedProjects.includes(project.name))
         .length > 0
@@ -215,12 +206,10 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
         projects.filter(project => selectedProjects.length === 0 || selectedProjects.includes(project.name)).length
         : 0;
 
-    // Proje seçimi handler
     const handleProjectSelection = (selectedOptions) => {
         setSelectedProjects(selectedOptions ? selectedOptions.map(option => option.value) : []);
     };
 
-    // react-select custom styles
     const customSelectStyles = {
         control: (provided) => ({
             ...provided,
@@ -302,79 +291,164 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
                     </div>
                 </div>
 
-                {/* Çubuk Grafiği */}
-                <div style={{ width: '90%', height: '500px', margin: '0 auto' }}>
-                    {chartData[0] && Object.keys(chartData[0]).length <= 1 && !loading && (
-                        <p style={{ textAlign: 'center', color: '#888' }}>
-                            Gösterilecek veri bulunamadı. Lütfen bir proje seçin.
-                        </p>
-                    )}
-                    {chartData[0] && Object.keys(chartData[0]).length > 1 && (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={chartData}
-                                margin={{ top: 30, right: 30, left: 10, bottom: 5 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="metric"
-                                    label={{ value: 'Metrik', position: 'insideBottom', offset: -5 }}
-                                />
-                                <YAxis
-                                    yAxisId="left"
-                                    label={{
-                                        value: 'Atık Kapasitesi (kg/gün)',
-                                        angle: -90,
-                                        position: 'insideLeft'
-                                    }}
-                                />
-                                <YAxis
-                                    yAxisId="right"
-                                    orientation="right"
-                                    label={{
-                                        value: 'Konteyner Sayısı',
-                                        angle: 90,
-                                        position: 'insideRight'
-                                    }}
-                                />
-                                <Tooltip
-                                    formatter={(value, name, props) => {
-                                        const metric = props.payload.metric;
-                                        return [
-                                            `${value} ${metric === 'Atık Kapasitesi' ? 'kg/gün' : 'konteyner'}`,
-                                            `${name} - ${metric}`
-                                        ];
-                                    }}
-                                />
-                                <Legend />
-                                {projects
-                                    .filter(project => selectedProjects.length === 0 || selectedProjects.includes(project.name))
-                                    .map((project, index) => (
-                                        <Bar
-                                            key={project.name}
-                                            dataKey={project.name}
-                                            fill={colors[index % colors.length]}
-                                            name={project.name}
-                                        />
-                                    ))}
-                                <ReferenceLine
-                                    y={averageWasteCapacity}
-                                    yAxisId="left"
-                                    stroke="red"
-                                    strokeDasharray="3 3"
-                                    label={{
-                                        value: `Ort. Kapasite: ${averageWasteCapacity.toFixed(2)} kg/gün`,
-                                        position: 'top'
-                                    }}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
+                {/* Grafikler (Çubuk ve Çizgi) */}
+                <div style={{
+                    width: '90%',
+                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '20px',
+                    flexWrap: 'wrap' // Responsive behavior for smaller screens
+                }}>
+                    {/* Çubuk Grafiği */}
+                    <div style={{ flex: '1 1 45%', minWidth: '300px', height: '500px' }}>
+                        <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>Çubuk Grafiği</h3>
+                        {chartData[0] && Object.keys(chartData[0]).length <= 1 && !loading && (
+                            <p style={{ textAlign: 'center', color: '#888' }}>
+                                Gösterilecek veri bulunamadı. Lütfen bir proje seçin.
+                            </p>
+                        )}
+                        {chartData[0] && Object.keys(chartData[0]).length > 1 && (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={chartData}
+                                    margin={{ top: 30, right: 30, left: 10, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="metric"
+                                        label={{ value: 'Metrik', position: 'insideBottom', offset: -5 }}
+                                    />
+                                    <YAxis
+                                        yAxisId="left"
+                                        label={{
+                                            value: 'Atık Kapasitesi (kg/gün)',
+                                            angle: -90,
+                                            position: 'insideLeft'
+                                        }}
+                                    />
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                        label={{
+                                            value: 'Konteyner Sayısı',
+                                            angle: 90,
+                                            position: 'insideRight'
+                                        }}
+                                    />
+                                    <Tooltip
+                                        formatter={(value, name, props) => {
+                                            const metric = props.payload.metric;
+                                            return [
+                                                `${value} ${metric === 'Atık Kapasitesi' ? 'kg/gün' : 'konteyner'}`,
+                                                `${name} - ${metric}`
+                                            ];
+                                        }}
+                                    />
+                                    <Legend />
+                                    {projects
+                                        .filter(project => selectedProjects.length === 0 || selectedProjects.includes(project.name))
+                                        .map((project, index) => (
+                                            <Bar
+                                                key={project.name}
+                                                dataKey={project.name}
+                                                fill={colors[index % colors.length]}
+                                                name={project.name}
+                                            />
+                                        ))}
+                                    <ReferenceLine
+                                        y={averageWasteCapacity}
+                                        yAxisId="left"
+                                        stroke="red"
+                                        strokeDasharray="3 3"
+                                        label={{
+                                            value: `Ort. Kapasite: ${averageWasteCapacity.toFixed(2)} kg/gün`,
+                                            position: 'top'
+                                        }}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+
+                    {/* Çizgi Grafiği */}
+                    <div style={{ flex: '1 1 45%', minWidth: '300px', height: '500px' }}>
+                        <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>Çizgi Grafiği</h3>
+                        {chartData[0] && Object.keys(chartData[0]).length <= 1 && !loading && (
+                            <p style={{ textAlign: 'center', color: '#888' }}>
+                                Gösterilecek veri bulunamadı. Lütfen bir proje seçin.
+                            </p>
+                        )}
+                        {chartData[0] && Object.keys(chartData[0]).length > 1 && (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart
+                                    data={chartData}
+                                    margin={{ top: 30, right: 30, left: 10, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="metric"
+                                        label={{ value: 'Metrik', position: 'insideBottom', offset: -5 }}
+                                    />
+                                    <YAxis
+                                        yAxisId="left"
+                                        label={{
+                                            value: 'Atık Kapasitesi (kg/gün)',
+                                            angle: -90,
+                                            position: 'insideLeft'
+                                        }}
+                                    />
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                        label={{
+                                            value: 'Konteyner Sayısı',
+                                            angle: 90,
+                                            position: 'insideRight'
+                                        }}
+                                    />
+                                    <Tooltip
+                                        formatter={(value, name, props) => {
+                                            const metric = props.payload.metric;
+                                            return [
+                                                `${value} ${metric === 'Atık Kapasitesi' ? 'kg/gün' : 'konteyner'}`,
+                                                `${name} - ${metric}`
+                                            ];
+                                        }}
+                                    />
+                                    <Legend />
+                                    {projects
+                                        .filter(project => selectedProjects.length === 0 || selectedProjects.includes(project.name))
+                                        .map((project, index) => (
+                                            <Line
+                                                key={project.name}
+                                                type="monotone"
+                                                dataKey={project.name}
+                                                stroke={colors[index % colors.length]}
+                                                name={project.name}
+                                                strokeWidth={2}
+                                                dot={{ r: 4 }}
+                                            />
+                                        ))}
+                                    <ReferenceLine
+                                        y={averageWasteCapacity}
+                                        yAxisId="left"
+                                        stroke="red"
+                                        strokeDasharray="3 3"
+                                        label={{
+                                            value: `Ort. Kapasite: ${averageWasteCapacity.toFixed(2)} kg/gün`,
+                                            position: 'top'
+                                        }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
                 </div>
 
                 {/* POLYGON Projeleri Listesi */}
                 <div style={{ marginTop: '20px', width: '90%', margin: '0 auto' }}>
-                    <h3 style={{ textAlign: 'center' }}>Atık Yönetimi Projeleri</h3>
+                    <h3 style={{ textAlign: 'center', marginTop: '100px' }}>Atık Yönetimi Projeleri</h3>
                     {loading && <p style={{ textAlign: 'center' }}>Yükleniyor...</p>}
                     {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
                     {!loading && !error && projects.length === 0 && (
@@ -418,7 +492,7 @@ const WasteManagementPage = ({ minCoverCount = 0, capacityLtPerMin = 0 }) => {
 
                 {/* Atık Yönetimi Proje Detayları */}
                 <div style={{ marginTop: '40px', width: '90%', margin: '0 auto' }}>
-                    <h3 style={{ textAlign: 'center' }}>Atık Yönetimi Proje Detayları</h3>
+                    <h3 style={{ textAlign: 'center', marginTop: '100px' }}>Atık Yönetimi Proje Detayları</h3>
                     {loading && <p style={{ textAlign: 'center' }}>Yükleniyor...</p>}
                     {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
                     {!loading && !error && projects.length === 0 && (
