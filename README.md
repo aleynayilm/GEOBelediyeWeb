@@ -23,14 +23,26 @@ Bu proje, şehir içi altyapı hizmetlerinin (çöp konteyneri, rögar kapağı,
 
 ## ⚙️ Kullanılan Teknolojiler
 
-### Backend
-- ASP.NET Core Web API
-- Entity Framework Core
-- PostgreSQL + PostGIS
-
 ### Frontend
-- React.js
-- OpenLayers
+
+- React  
+- OpenLayers  
+- Axios (HTTP istekleri için)  
+- WKT (Well-Known Text) formatı kullanımı  
+
+### Backend
+
+- ASP.NET Core Web API  
+- Entity Framework Core  
+- **UnitOfWork** ve **GenericRepository** patternleri ile katmanlı mimari  
+- PostgreSQL veritabanı üzerinde **PostGIS** eklentisi  
+- Coğrafi veri işlemleri için **TopologySuit** kütüphanesi  
+
+### Veritabanı
+
+- **PostgreSQL** kullanımı
+- Mekansal veri türleri ve sorguları için **PostGIS** uzantısı
+- Coğrafi verilerin yönetimi ve topoloji kontrolleri için **TopologySuit** kullanımı
 
 ---
 
