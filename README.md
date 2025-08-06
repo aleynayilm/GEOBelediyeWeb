@@ -1,70 +1,41 @@
-# Getting Started with Create React App
+# 🗺️ Akıllı Dağıtım ve Planlama Sistemi
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📌 Proje Tanıtımı
 
-## Available Scripts
+Bu proje, şehir içi altyapı hizmetlerinin (çöp konteyneri, rögar kapağı, otopark, etkinlik alanı vb.) daha verimli ve planlı şekilde yerleştirilmesini sağlayan **Coğrafi Bilgi Sistemleri (CBS)** tabanlı bir karar destek sistemidir. Kullanıcılar harita üzerinde çizim yaparak belirli bölgeler tanımlar ve sistem, bu alanlar için optimize edilmiş konum önerileri sunar. Proje, veri temelli planlamayı mümkün kılarak belediyelerin kaynaklarını daha etkin kullanmasını hedefler.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 🖼️ Proje Görselleri
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+<img width="1919" height="910" alt="Ekran görüntüsü 2025-07-27 214047" src="https://github.com/user-attachments/assets/ea8528cb-d4ef-46c2-a2da-01665c1610c0" />
+<img width="1918" height="909" alt="Ekran görüntüsü 2025-07-27 214142" src="https://github.com/user-attachments/assets/3e0f303b-8643-4996-936c-22f7299681bb" />
+<img width="1918" height="907" alt="Ekran görüntüsü 2025-07-27 214403" src="https://github.com/user-attachments/assets/6e9bed5a-ecd7-4a3a-8718-c4b7db4ba0ee" />
+<img width="1919" height="907" alt="Ekran görüntüsü 2025-07-27 215117" src="https://github.com/user-attachments/assets/b2d907ef-746b-4d7a-aeb7-b44b2f5a77bd" />
+<img width="1918" height="908" alt="Ekran görüntüsü 2025-07-27 215138" src="https://github.com/user-attachments/assets/75221c82-c6a3-46e6-8bda-37e5a222ff3d" />
+<img width="1919" height="912" alt="Ekran görüntüsü 2025-07-27 214434" src="https://github.com/user-attachments/assets/b5541aa8-e1ba-4d38-a64e-cbdbf1bb6ede" />
+<img width="1919" height="912" alt="Ekran görüntüsü 2025-07-27 214530" src="https://github.com/user-attachments/assets/7e13992a-15e6-45dc-ba53-e56aed87c41e" />
+<img width="1919" height="904" alt="Ekran görüntüsü 2025-07-27 214752" src="https://github.com/user-attachments/assets/936e846e-1e79-4544-b1be-5356e0879220" />
+<img width="1919" height="907" alt="Ekran görüntüsü 2025-07-27 214821" src="https://github.com/user-attachments/assets/8bd9906d-46ca-4f33-9b95-6f23bdf461b7" />
+<img width="1919" height="910" alt="Ekran görüntüsü 2025-07-27 214840" src="https://github.com/user-attachments/assets/4c4c39e8-826f-42aa-bc70-22bb3c89305d" />
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## ⚙️ Kullanılan Teknolojiler
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Backend
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL + PostGIS
 
-### `npm run build`
+### Frontend
+- React.js
+- OpenLayers
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 👨‍💻 Geliştiriciler
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- [Aleyna Yılmaz](https://github.com/aleynayilm)
+- [Nusret Tinel](https://github.com/NusretTinel)    
+- [Emirhan Camkurt](https://github.com/EmirhanCamkurt)
